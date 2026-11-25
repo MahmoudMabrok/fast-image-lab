@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <title>AnotherLab — Bonsai Image 4B</title>
+  <meta name="description" content="Generate images with Bonsai Image 4B (FLUX.2-klein) on your own machine. Images self-destruct after five minutes." />
+  <link rel="icon" href="/favicon.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="AnotherLab home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none">
+          <path d="M16 27v-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M16 18c-2.4 1.4-5.4 1.2-7-.4M16 18c2.4 1.4 5.4 1.2 7-.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <circle cx="9" cy="10.5" r="5" fill="currentColor"/>
+          <circle cx="23" cy="10.5" r="5" fill="currentColor"/>
+          <circle cx="16" cy="7.5" r="5.4" fill="currentColor"/>
+          <ellipse cx="16" cy="27.5" rx="8" ry="2.2" fill="currentColor" opacity=".55"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <strong>AnotherLab</strong>
+        <em>Bonsai Image 4B</em>
+      </span>
+    </a>
+
+    <div class="topbar-right">
+      <div class="pill" id="engine-pill" title="Engine status">
+        <span class="dot" id="engine-dot"></span>
+        <span id="engine-label">connecting…</span>
+      </div>
+      <div class="pill queue-pill" id="queue-pill" hidden>
+        <span id="queue-label">queue 0</span>
+      </div>
+      <button class="btn ghost" id="agent-btn" type="button">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2a3 3 0 0 1 3 3v1h1a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3h1V5a3 3 0 0 1 3-3Zm0 2a1 1 0 0 0-1 1v1h2V5a1 1 0 0 0-1-1Zm-4 4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H6Zm1.5 2.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Zm5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" fill="currentColor"/></svg>
+        Agent access
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="composer panel" aria-labelledby="composer-title">
+      <div class="panel-head">
+        <h1 id="composer-title">Describe it</h1>
+        <span class="hint">Bonsai Image 4B · FLUX.2-klein-4B</span>
+      </div>
+
+      <div class="prompt-wrap">
+        <textarea id="prompt" rows="6" maxlength="4000" spellcheck="true"
+          placeholder="A bonsai tree in a black ceramic pot, morning light through a shoji screen…"></textarea>
+        <div class="prompt-foot">
+          <button class="link" id="surprise" type="button">✦ Surprise me</button>
+          <span id="char-count" class="mono">0 / 4000</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Look</div>
+        <div class="chips" id="styles" role="group" aria-label="Style presets">
+          <button class="chip" data-style="cinematic" type="button">Cinematic</button>
+          <button class="chip" data-style="photo" type="button">Photoreal</button>
+          <button class="chip" data-style="anime" type="button">Anime</button>
+          <button class="chip" data-style="product" type="button">Product</button>
+          <button class="chip" data-style="poster" type="button">Poster</button>
+          <button class="chip" data-style="illustration" type="button">Illustration</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Frame</div>
+        <div class="ratios" id="ratios" role="group" aria-label="Aspect ratio">
+          <button class="ratio is-active" data-ratio="1:1" type="button"><i style="--w:16;--h:16"></i><span>1:1</span></button>
+          <button class="ratio" data-ratio="3:4" type="button"><i style="--w:12;--h:16"></i><span>3:4</span></button>
+          <button class="ratio" data-ratio="4:3" type="button"><i style="--w:16;--h:12"></i><span>4:3</span></button>
+          <button class="ratio" data-ratio="16:9" type="button"><i style="--w:16;--h:9"></i><span>16:9</span></button>
+          <button class="ratio" data-ratio="9:16" type="button"><i style="--w:9;--h:16"></i><span>9:16</span></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Quality <span class="mono dim" id="size-label">512 × 512</span></div>
+        <div class="segmented" id="quality" role="group" aria-label="Quality">
+          <button class="is-active" data-quality="draft" type="button">Draft</button>
+          <button data-quality="balanced" type="button">Balanced</button>
+          <button data-quality="detail" type="button">Detail</button>
+        </div>
+        <p class="note" id="speed-note">CPU engine. The model is distilled: 4 steps is its native pace.</p>
+      </div>
+
+      <div class="field">
+        <label class="toggle" id="auto-download-row" title="Save finished images to your browser automatically. The choice is remembered in this browser; it keeps working even if you close the tab.">
+          <input type="checkbox" id="auto-download" />
+          <span class="toggle-track" aria-hidden="true"></span>
+          <span class="toggle-label">Auto-download finished images</span>
+          <span class="toggle-note">remembered · works if the tab is closed</span>
+        </label>
+      </div>
+
+      <details class="advanced">
+        <summary>Advanced</summary>
+        <div class="advanced-grid">
+          <label class="input">
+            <span>Seed</span>
+            <input id="seed" type="number" min="-1" step="1" placeholder="random" />
+          </label>
+          <label class="input">
+            <span>Steps</span>
+            <input id="steps" type="number" min="4" max="20" step="1" value="4" />
+          </label>
+          <label class="input">
+            <span>CFG</span>
+            <input id="cfg" type="number" min="1" max="10" step="0.1" value="1" />
+          </label>
+          <label class="input span-2">
+            <span>Negative prompt</span>
+            <input id="negative" type="text" placeholder="nsfw, worst quality, blurry, jpeg artifact" />
+          </label>
+        </div>
+        <p class="note">Bonsai is a distilled model: it runs at CFG 1 and its native pace is 4 steps. Negative prompts only apply above CFG 1.</p>
+      </details>
+
+      <button class="generate" id="generate" type="button">
+        <span class="generate-label">Generate</span>
+        <span class="generate-meta" id="generate-meta">512 × 512 · 4 steps</span>
+        <span class="kbd">⌘↵</span>
+      </button>
+      <p class="note center" id="generate-note">Images are deleted 5 minutes after they are ready.</p>
+    </section>
+
+    <section class="stage panel" aria-live="polite">
+      <div class="stage-head">
+        <div class="stage-title">
+          <span class="eyebrow" id="stage-eyebrow">Canvas</span>
+          <h2 id="stage-heading">Nothing here yet</h2>
+        </div>
+        <div class="stage-actions" id="stage-actions"></div>
+      </div>
+
+      <div class="stage-body" id="stage-body">
+        <div class="empty" id="empty-state">
+          <div class="empty-art" aria-hidden="true">
+            <div class="orb"></div>
+            <div class="orb two"></div>
+          </div>
+          <p>Start with an idea. Try one of these:</p>
+          <div class="samples" id="samples">
+            <button class="sample" data-prompt="A miniature bonsai tree in a black ceramic pot on a maple table, morning light through a shoji screen, soft shadows, quiet zen mood, photographic" type="button">
+              <span>Zen bonsai</span><em>Black ceramic pot, shoji light, quiet zen…</em>
+            </button>
+            <button class="sample" data-prompt="Anime-style illustration of a small spirit tree glowing gently in a snowy shrine at night, tiny lanterns, falling snow, cinematic composition" type="button">
+              <span>Spirit shrine</span><em>Glowing tree, snowy shrine, night lanterns…</em>
+            </button>
+            <button class="sample" data-prompt="A retro-futurist travel poster for the moon, bold geometric type in burnt orange and cream, a tiny pine tree growing out of a crater, screen-print texture, the words LUNAR GARDEN" type="button">
+              <span>Lunar poster</span><em>Retro type, pine on the moon, screen-print…</em>
+            </button>
+            <button class="sample" data-prompt="A minimalist product photograph of a matte black tea set beside a small green bonsai, hard studio sun, long shadow, sandstone background" type="button">
+              <span>Tea &amp; bonsai</span><em>Matte black tea set, hard sun, sandstone…</em>
+            </button>
+          </div>
+        </div>
+
+        <div class="progress-view" id="progress-view" hidden>
+          <div class="progress-frame">
+            <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+              <circle class="ring-fg" id="ring" cx="60" cy="60" r="52"></circle>
+            </svg>
+            <div class="progress-center">
+              <span class="progress-pct" id="progress-pct">0%</span>
+              <span class="progress-step" id="progress-step">queued</span>
+            </div>
+          </div>
+          <h3 id="progress-title">Waiting for the engine</h3>
+          <p id="progress-sub" class="dim">One job at a time. You can close this tab; the job keeps running.</p>
+          <div class="progress-bar"><i id="progress-bar"></i></div>
+          <div class="progress-meta">
+            <span id="progress-eta">estimating…</span>
+            <button class="link danger" id="cancel-btn" type="button">Cancel</button>
+          </div>
+        </div>
+
+        <div class="result-view" id="result-view" hidden>
+          <figure class="result-figure">
+            <img id="result-img" alt="Generated image" />
+            <div class="result-overlay">
+              <button class="icon-btn" id="download-btn" type="button" title="Download">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v9m0 0 3.5-3.5M10 11 6.5 7.5M3 13v2a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="icon-btn" id="reuse-btn" type="button" title="Reuse prompt">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10a6 6 0 1 1 1.8 4.3M4 16v-4h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="icon-btn danger" id="delete-btn" type="button" title="Delete now">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2m-6 0 .7 10h6.6L14 6M8.5 9v4m3-4v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="ttl-badge" id="ttl-badge"><span class="ttl-dot"></span><span id="ttl-text">5:00</span></div>
+          </figure>
+          <div class="result-meta">
+            <p id="result-prompt"></p>
+            <div class="result-stats mono" id="result-stats"></div>
+          </div>
+        </div>
+
+        <div class="error-view" id="error-view" hidden>
+          <div class="error-icon">!</div>
+          <h3>That one failed</h3>
+          <p id="error-text" class="dim"></p>
+          <button class="btn" id="retry-btn" type="button">Try again</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="recent" aria-labelledby="recent-title">
+    <div class="recent-head">
+      <h2 id="recent-title">Recent</h2>
+      <span class="mono dim">auto-deleted after 5 min</span>
+    </div>
+    <div class="recent-strip" id="recent-strip">
+      <div class="recent-empty" id="recent-empty">Generated images will appear here.</div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>AnotherLab</span>
+    <span class="dim">Self-hosted · Bonsai Image 4B (2-bit GGUF) on ComfyUI</span>
+    <span class="mono dim" id="footer-version"></span>
+  </footer>
+
+  <!-- Agent access -->
+  <div class="modal" id="agent-modal" hidden>
+    <div class="modal-scrim" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="agent-title">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">Model Context Protocol</span>
+          <h2 id="agent-title">Let an agent make images</h2>
+        </div>
+        <button class="icon-btn" data-close type="button" aria-label="Close">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" data-tab="mcp" role="tab" type="button">MCP</button>
+        <button class="tab" data-tab="tools" role="tab" type="button">Tools</button>
+        <button class="tab" data-tab="rest" role="tab" type="button">REST</button>
+      </div>
+
+      <div class="tab-panel" data-panel="mcp">
+        <p class="modal-lead">Point any MCP client at this endpoint. The server speaks Streamable HTTP.</p>
+        <div class="code-block">
+          <code id="mcp-url">/mcp</code>
+          <button class="copy" data-copy="mcp-url" type="button">Copy</button>
+        </div>
+        <h3>Client config</h3>
+        <div class="code-block tall">
+          <pre id="mcp-config"></pre>
+          <button class="copy" data-copy="mcp-config" type="button">Copy</button>
+        </div>
+        <h3>Claude Code</h3>
+        <div class="code-block">
+          <code id="mcp-cli"></code>
+          <button class="copy" data-copy="mcp-cli" type="button">Copy</button>
+        </div>
+        <h3>Stdio bridge</h3>
+        <div class="code-block tall">
+          <pre id="mcp-stdio"></pre>
+          <button class="copy" data-copy="mcp-stdio" type="button">Copy</button>
+        </div>
+        <p class="note">Images are returned inline as base64 and also served from a URL. Both die five minutes after generation, so an agent should save the bytes immediately.</p>
+      </div>
+
+      <div class="tab-panel" data-panel="tools" hidden>
+        <div class="tool-list" id="tool-list"></div>
+      </div>
+
+      <div class="tab-panel" data-panel="rest" hidden>
+        <p class="modal-lead">The same engine over plain HTTP.</p>
+        <h3>Generate</h3>
+        <div class="code-block tall">
+          <pre id="rest-generate"></pre>
+          <button class="copy" data-copy="rest-generate" type="button">Copy</button>
+        </div>
+        <h3>Poll</h3>
+        <div class="code-block tall">
+          <pre id="rest-poll"></pre>
+          <button class="copy" data-copy="rest-poll" type="button">Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

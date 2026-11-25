@@ -1,0 +1,17 @@
+[Unit]
+Description=AnotherLab gateway (UI, REST, MCP)
+After=network.target comfyui.service
+Wants=comfyui.service
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/anotherlab
+EnvironmentFile=-/etc/anotherlab.env
+ExecStart=/srv/anotherlab/.venv/bin/uvicorn gateway.main:app \
+  --host 0.0.0.0 --port 8080 --proxy-headers --forwarded-allow-ips=*
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

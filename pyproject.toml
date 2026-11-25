@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "anotherlab"
+version = "1.0.0"
+description = "Bonsai Image 4B (FLUX.2-klein) image generation with self-destructing images and MCP access"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "httpx>=0.27,<1",
+  "websockets>=12,<15",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
+
+[project.scripts]
+anotherlab = "gateway.main:main"
+anotherlab-mcp-stdio = "gateway.mcp_stdio:main"
+
+[tool.setuptools]
+packages = ["gateway"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

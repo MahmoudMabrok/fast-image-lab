@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Runtime data: images are ephemeral by design
+data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Local config and output
+.env
+/etc/anotherlab.env
+out.png
+*.log
+
+# macOS
+.DS_Store
