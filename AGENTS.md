@@ -58,7 +58,7 @@ gateway/   FastAPI app, queue engine, SQLite store, ComfyUI client, MCP
 web/       static UI (index.html, styles.css, app.js)
 scripts/   provisioning, deploy, tunnel, trial
 profiles/  CPU (kube-labs) env profile
-systemd/   comfyui.service, anotherlab.service, anotherlab-tunnel.service
+systemd/   comfyui.service, anotherlab.service, cloudflared.service
 tests/     pytest suite, including a fake ComfyUI
 docs/      ARCHITECTURE.md, MCP.md
 ```

@@ -14,7 +14,7 @@ help:
 	@echo "  make setup     provision the remote machine (torch, ComfyUI, GGUF node)"
 	@echo "  make models    download the CPU profile weights on the remote machine"
 	@echo "  make deploy    upload this repo and install/restart both services"
-	@echo "  make tunnel    publish the UI on a Cloudflare quick tunnel"
+	@echo "  make tunnel    install the named Cloudflare tunnel for the UI"
 	@echo "  make trial     submit one image and time it"
 	@echo "  make logs      follow the gateway log on the remote machine"
 	@echo "  make status    show engine health"
@@ -45,7 +45,7 @@ deploy:
 	./scripts/deploy.sh $(MACHINE)
 
 tunnel:
-	./scripts/cloudflared_tunnel.sh $(MACHINE)
+	./scripts/named_tunnel.sh $(MACHINE)
 
 tunnel-platform:
 	./scripts/tunnel.sh $(MACHINE) $(PORT)

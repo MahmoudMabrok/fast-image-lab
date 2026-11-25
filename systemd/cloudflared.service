@@ -1,0 +1,16 @@
+[Unit]
+Description=Cloudflare named tunnel for Fast Image Lab
+After=network-online.target anotherlab.service
+Wants=network-online.target anotherlab.service
+
+[Service]
+Type=notify
+TimeoutStartSec=15
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate --config /etc/cloudflared/config.yml tunnel run
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -999,7 +999,7 @@
     const url = mcpUrl();
     $("#mcp-url").textContent = url;
     $("#mcp-config").textContent = JSON.stringify(
-      { mcpServers: { fast-image-lab: { type: "http", url } } },
+      { mcpServers: { "fast-image-lab": { type: "http", url } } },
       null,
       2
     );

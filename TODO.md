@@ -4,21 +4,29 @@ Self-hosted text-to-image studio: FastAPI HTTP wrapper + ComfyUI (CPU) engine
 running the distilled FLUX.2-Klein-4B build that Bonsai Image 4B is quantized
 from (Bonsai's 1-bit Q1_0 file is unloadable — no Q1_0 dequantizer exists in
 any current toolchain — so the CPU build uses its 2-bit Q2_K GGUF), exposed
-via a cloudflared quick tunnel. Images are ephemeral (five hours).
+via a named cloudflared tunnel. Images are ephemeral (five hours).
 
-## Build
+## Completed
 
-### 2026-11-25 — named tunnel config audit on `bonsai` (read-only)
+### 2026-11-26 — named tunnel fixed; quick tunnel removed
 
-- [x] Inspected `/etc/cloudflared/config.yml` — tunnel `ab3ea48d-…` (`fast-image-lab`), ingress `fast-image-lab.mo3ta.top` → `http://127.0.0.1:3000`
+- [x] Inspected `/etc/cloudflared/config.yml` — tunnel `ab3ea48d-…` (`fast-image-lab`), ingress was `fast-image-lab.mo3ta.top` → `http://127.0.0.1:3000`
 - [x] Inspected `/root/.cloudflared/` — `cert.pem` + tunnel credentials; `cloudflared tunnel list` shows `fast-image-lab`, `share`, `voice`
 - [x] Confirmed `cloudflared.service` (enabled, active) runs the named tunnel from `/etc/cloudflared/config.yml`
-- [x] Confirmed port mismatch: nothing listens on `3000`; gateway `uvicorn` listens on `8080` → public host returns 502
-- [x] Confirmed duplicate tunnel: `anotherlab-tunnel.service` still runs a quick tunnel to `8080` (`views-finder-red-cities.trycloudflare.com`, 200)
-- [x] Confirmed no Access policy / `ANOTHERLAB_API_KEY=` empty → stable hostname would be unauthenticated
-- [ ] Point ingress at `http://127.0.0.1:8080` (or repoint the gateway) and verify `fast-image-lab.mo3ta.top/api/health` → 200
-- [ ] Retire `anotherlab-tunnel.service` + update `ANOTHERLAB_PUBLIC_URL` to the named host (decision needed)
-- [ ] Set `ANOTHERLAB_API_KEY` before the named host is publicly usable
+- [x] Confirmed port mismatch: nothing listened on `3000`; gateway on `8080` → public host returned 502
+- [x] Confirmed duplicate tunnel: `anotherlab-tunnel.service` ran a quick tunnel to `8080` (`views-finder-red-cities.trycloudflare.com`, 200)
+- [x] Confirmed no Access policy / `ANOTHERLAB_API_KEY=` empty → stable hostname is unauthenticated
+- [x] Ingress repointed to `http://127.0.0.1:8080` (backup at `config.yml.bak`); `fast-image-lab.mo3ta.top/api/health` → 200, MCP `initialize` → `serverInfo.fast-image-lab`
+- [x] Quick tunnel retired on the VM: `anotherlab-tunnel.service` disabled, unit deleted, daemon reloaded; old trycloudflare URL → 530
+- [x] `ANOTHERLAB_PUBLIC_URL` → `https://fast-image-lab.mo3ta.top`; `/api/config` reports it, `auth_required: false`
+- [x] Repo purged of the quick-tunnel path: deleted `scripts/cloudflared_tunnel.sh`, `scripts/remote_tunnel.sh`, `systemd/anotherlab-tunnel.service`
+- [x] Replaced with named-tunnel path: `scripts/named_tunnel.sh`, `scripts/remote_named_tunnel.sh`, `systemd/cloudflared.service`; `make tunnel` rerun successfully
+- [x] Docs updated (README, ARCHITECTURE, MCP, AGENTS, Makefile help) — no `trycloudflare` / `anotherlab-tunnel` references remain
+- [x] `make test` green — 34/34 after the change
+- [x] Set `ANOTHERLAB_API_KEY` (random 32-byte hex) in `/etc/anotherlab.env`, restart, verify: no key → 401, keyed → ready, `auth_required: true`
+- [x] Save key locally in `fast-image-lab/.secrets/anotherlab.key` (git-ignored, chmod 600, never committed)
+- [x] One public generation over `fast-image-lab.mo3ta.top` (keyed) → `img_2c6I53p_BHxS` (256×256, `photo`/`draft`) succeeded over the poll path; valid 111 KB PNG fetched with the key
+- [x] README status line updated (keyed, named tunnel, API-key section); `make test` 34/34
 
 ## Completed
 

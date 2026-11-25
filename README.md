@@ -62,7 +62,7 @@ make models MACHINE=bonsai
 # 4. Upload this repo and start both services
 make deploy MACHINE=bonsai
 
-# 5. Publish the UI on a Cloudflare quick tunnel and print the URL
+# 5. Publish the UI on the named Cloudflare tunnel
 make tunnel MACHINE=bonsai
 ```
 
@@ -96,36 +96,52 @@ kube-labs exec bonsai -- journalctl -u anotherlab -n 100
 
 ## Public URL with Cloudflare
 
-`make tunnel MACHINE=bonsai` installs `cloudflared` on the machine, runs it as
-`anotherlab-tunnel.service`, and prints the `https://<name>.trycloudflare.com`
-URL. It also writes that URL to `ANOTHERLAB_PUBLIC_URL` and restarts the gateway so
-generated links and MCP responses use the public host.
+`make tunnel MACHINE=bonsai` points the existing named Cloudflare tunnel
+(`fast-image-lab`) at the machine, runs it as `cloudflared.service`, and sets
+`ANOTHERLAB_PUBLIC_URL` to the stable hostname so generated links and MCP
+responses use the public host.
 
-- **UI:** https://views-finder-red-cities.trycloudflare.com
-- **MCP:** https://views-finder-red-cities.trycloudflare.com/mcp
+- **UI:** https://fast-image-lab.mo3ta.top
+- **MCP:** https://fast-image-lab.mo3ta.top/mcp
 
-**Status:** the tunnel above is live as of **2026-11-26** — UI page,
+**Status:** the hostname above is live as of **2026-11-26** — UI page,
 `/api/health` (5-hour TTL), an MCP `initialize` call, and a full 256×256
-generation with a saved style preset all verified from the public internet.
-The engine runs the distilled FLUX.2-Klein-4B build (2-bit Q2_K GGUF) on the
-`bonsai` VM.
+generation with a saved style preset all verified over the **named, key-protected**
+host. The engine runs the distilled FLUX.2-Klein-4B build (2-bit Q2_K GGUF) on
+the `bonsai` VM.
 
-A quick tunnel needs no Cloudflare account. The hostname is **ephemeral**: it
-changes whenever `anotherlab-tunnel` restarts. For a stable hostname, create a
-named tunnel with `cloudflared tunnel login` and `cloudflared tunnel create`,
-then point its ingress at `http://127.0.0.1:8080`.
+### API key
+
+The host is **key-protected**. `ANOTHERLAB_API_KEY` is set in
+`/etc/anotherlab.env` (never committed), so every `/api/*` and `/mcp` request
+needs the key — as an `Authorization: Bearer <key>` header, an `X-Api-Key`
+header, or a `?key=<key>` query param. The web UI has a key field (stored in
+`localStorage`); without it, requests get `401`. Keep the key out of the repo —
+this clone stores it at `fast-image-lab/.secrets/anotherlab.key` (git-ignored).
+
+A named tunnel is created once on the machine, then reused:
+
+```bash
+cloudflared tunnel login
+cloudflared tunnel create fast-image-lab
+cloudflared tunnel route dns fast-image-lab fast-image-lab.mo3ta.top
+```
+
+Credentials stay on the machine at `/root/.cloudflared/<id>.json`; the repo only
+ships the unit and the ingress installer. The hostname is **stable** across
+restarts, unlike a quick tunnel.
 
 The platform's own URL (or a local port-forward) is still available with
 `make tunnel-platform MACHINE=bonsai`.
 
 ```bash
 # On the machine
-systemctl status anotherlab-tunnel
-journalctl -u anotherlab-tunnel -n 50
+systemctl status cloudflared
+journalctl -u cloudflared -n 50
 ```
 
-Set `ANOTHERLAB_API_KEY` before publishing publicly. The quick tunnel is a real
-public listener; without a key, anyone with the hostname can generate images.
+Set `ANOTHERLAB_API_KEY` before publishing publicly. The tunnel is a real public
+listener; without a key, anyone with the hostname can generate images.
 
 ## Using MCP
 
@@ -169,7 +185,7 @@ Add `--key <API_KEY>` when the server has `ANOTHERLAB_API_KEY` set.
 
 `generate_image` blocks until the engine has the job, then for up to `wait_seconds` (default 90, max 600). On CPU, a job often exceeds that, so it returns `running` (with progress, step and ETA) and the agent polls `get_generation`. There is deliberately no listing tool — agents only ever see the jobs they started; cross-user history stays in the web UI and `GET /api/generations`. The tool text tells the agent to save the bytes immediately, because the URL dies with the file.
 
-**Over a Cloudflare quick tunnel, prefer `wait_seconds: 0`.** Quick tunnels cut off origin requests after 120 s (error 524); the job keeps running server-side, but the agent that blocked has no listing tool to recover the ID. With `wait_seconds: 0` the tool returns the id as soon as the engine has the job (sub-second), and the agent polls `get_generation` at its own pace. A tunnel restart changes the hostname, so a long-blocking call has a second chance to die.
+**Over a Cloudflare tunnel, prefer `wait_seconds: 0`.** The edge cuts off origin requests after 120 s (error 524); the job keeps running server-side, but the agent that blocked has no listing tool to recover the ID. With `wait_seconds: 0` the tool returns the id as soon as the engine has the job (sub-second), and the agent polls `get_generation` at its own pace.
 
 See [docs/MCP.md](docs/MCP.md) for raw JSON-RPC examples and the exact response shape.
 
@@ -270,7 +286,7 @@ gateway/
 web/            the UI (no build step)
 scripts/        provisioning, deploy, tunnel, trial
 profiles/       CPU environment profile
-systemd/        comfyui.service, anotherlab.service, anotherlab-tunnel.service
+systemd/        comfyui.service, anotherlab.service, cloudflared.service
 tests/          pytest suite
 ```
 

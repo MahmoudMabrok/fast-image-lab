@@ -198,10 +198,10 @@ No arguments. Returns the full `/api/health` payload: device, ComfyUI version, q
 
 ## Long-running calls behind a tunnel
 
-Cloudflare quick tunnels time out the origin after **120 s** (HTTP 524). The
-generation keeps running server-side, but a client still blocked inside
-`generate_image` never learns the job id — and there is no listing tool to
-recover it from. So behind a tunnel:
+Cloudflare tunnels time out the origin after **120 s** (HTTP 524) when the
+edge gives up on a request. The generation keeps running server-side, but a
+client still blocked inside `generate_image` never learns the job id — and there
+is no listing tool to recover it from. So behind a tunnel:
 
 1. Call `generate_image` with `wait_seconds: 0`. It returns the id as soon as
    the engine has the job (sub-second in practice).

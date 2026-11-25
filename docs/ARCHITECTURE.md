@@ -3,7 +3,7 @@
 Fast Image Lab is two processes and one static directory.
 
 ```
-systemd: comfyui.service     systemd: anotherlab.service + anotherlab-tunnel.service
+systemd: comfyui.service     systemd: anotherlab.service + cloudflared.service
 ┌──────────────────────┐     ┌──────────────────────────────────────┐
 │ ComfyUI :8188        │◄────│ FastAPI :8080                        │
 │ headless, CPU        │ HTTP│ queue worker · SQLite · SSE · reaper │
@@ -150,17 +150,15 @@ Subscribers are in-memory `asyncio.Queue`s with a bounded size; a slow client dr
 
 ## Publishing
 
-`make tunnel` installs `cloudflared` on the machine and runs it as
-`anotherlab-tunnel.service` against `http://127.0.0.1:8080`. A quick tunnel needs
-no Cloudflare account, so the gateway never has to expose port 8080 or hold a
-Cloudflare credential. The hostname is ephemeral: it changes when the tunnel
-restarts, which is why the installer writes the current URL into
-`ANOTHERLAB_PUBLIC_URL` and restarts the gateway.
+`make tunnel` points the existing named Cloudflare tunnel (`fast-image-lab`)
+at `http://127.0.0.1:8080` and runs it as `cloudflared.service`. The tunnel and
+its credentials live on the machine (`/root/.cloudflared/`); the repo ships only
+the unit and the ingress installer. The hostname is stable across restarts, so
+`ANOTHERLAB_PUBLIC_URL` is written once and does not churn.
 
 The tunnel is a real public listener. With no `ANOTHERLAB_API_KEY`, anyone who
 learns the hostname can use the API, MCP tools and image bytes. Set a key before
-sharing the URL, or use a named tunnel with an access policy and a stable
-hostname.
+sharing the URL, or put a Cloudflare Access policy in front of the hostname.
 
 ## Failure modes
 

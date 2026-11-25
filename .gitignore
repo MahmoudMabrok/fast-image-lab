@@ -20,3 +20,6 @@ out.png
 
 # macOS
 .DS_Store
+
+# Local-only secrets (never committed)
+.secrets/
