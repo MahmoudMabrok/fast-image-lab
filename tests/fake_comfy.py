@@ -32,6 +32,7 @@ def free_port() -> int:
 
 class FakeComfy:
     def __init__(self, output_dir: Path, *, duration: float = 1.2, steps: int = 4):
+        self.drop_next = 0
         self.output_dir = output_dir
         self.duration = duration
         self.steps = steps
@@ -75,6 +76,12 @@ class FakeComfy:
         @app.post("/prompt")
         async def prompt(payload: dict[str, Any]) -> dict[str, Any]:
             prompt_id = uuid.uuid4().hex
+            # Silently drop: the call is accepted, but nothing runs — no queue
+            # entry, no history, no image. Models a workflow killed by an
+            # interrupt before (or right after) it reached the executor.
+            if self.drop_next > 0:
+                self.drop_next -= 1
+                return {"prompt_id": prompt_id, "number": len(self.history) + 1}
             client_id = str(payload.get("client_id") or "")
             asyncio.create_task(self._run(prompt_id, client_id))
             return {"prompt_id": prompt_id, "number": len(self.history) + 1}

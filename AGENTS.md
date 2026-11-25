@@ -29,7 +29,7 @@ When all items are done, move the list under a `## Completed` heading in
 
 ## Project rules
 
-- `make test` (30 pytest tests) must pass before any code change is called
+- `make test` (34 pytest tests) must pass before any code change is called
   complete. Add or update tests for behavior changes.
 - Keep the gateway dependency-light: FastAPI, httpx, websockets, SQLite. MCP is
   hand-written in `gateway/mcp_http.py`; do not swap it for the `mcp` SDK.

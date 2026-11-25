@@ -103,3 +103,62 @@ def test_expires_in_is_reported(tmp_path):
     assert job is not None
     assert 295 <= job["expires_in"] <= 300
     store.close()
+
+
+OLD_SCHEMA = """
+CREATE TABLE jobs (
+    id            TEXT PRIMARY KEY,
+    prompt        TEXT NOT NULL,
+    negative      TEXT NOT NULL DEFAULT '',
+    width         INTEGER NOT NULL,
+    height        INTEGER NOT NULL,
+    steps         INTEGER NOT NULL,
+    cfg           REAL NOT NULL,
+    seed          INTEGER NOT NULL,
+    status        TEXT NOT NULL,
+    created_at    REAL NOT NULL,
+    started_at    REAL,
+    finished_at   REAL,
+    expires_at    REAL,
+    progress      REAL NOT NULL DEFAULT 0,
+    step          INTEGER NOT NULL DEFAULT 0,
+    total_steps   INTEGER NOT NULL DEFAULT 0,
+    error         TEXT,
+    filename      TEXT,
+    bytes         INTEGER,
+    prompt_id     TEXT,
+    source        TEXT NOT NULL DEFAULT 'web'
+);
+"""
+
+
+def test_store_migrates_old_databases_adding_styles_and_quality(tmp_path):
+    import sqlite3
+
+    db_path = tmp_path / "legacy.sqlite3"
+    db = sqlite3.connect(db_path)
+    db.executescript(OLD_SCHEMA)
+    db.execute(
+        "INSERT INTO jobs (id, prompt, width, height, steps, cfg, seed,"
+        " status, created_at, source)"
+        " VALUES ('img_old', 'a cat', 512, 512, 4, 1.0, 1, 'succeeded', 100, 'web')"
+    )
+    db.commit()
+    db.close()
+
+    # Opening the legacy database with the new Store must add the columns
+    # without losing rows.
+    store = Store(db_path)
+    job = store.get("img_old")
+    assert job is not None
+    assert job["styles"] == ""
+    assert job["quality"] is None
+    store.close()
+
+    # Re-opening a migrated database is a no-op, and round-trips the new
+    # fields on writes.
+    store = Store(db_path)
+    store.update("img_old", styles="cinematic,photo", quality="detail")
+    job = store.get("img_old")
+    assert (job["styles"], job["quality"]) == ("cinematic,photo", "detail")
+    store.close()

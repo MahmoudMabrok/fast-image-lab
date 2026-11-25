@@ -106,6 +106,45 @@ async def test_engine_reports_offline_when_comfy_is_down(tmp_path):
     store.close()
 
 
+async def test_lost_prompt_fails_fast_and_frees_the_worker(tmp_path):
+    """A prompt that ComfyUI accepted but never ran (interrupted at submit
+    time, as a gateway restart does) must fail within the vanish window —
+    not spin the single worker until the full job timeout — and the worker
+    must pick up the next queued job."""
+    (tmp_path / "comfy-output").mkdir()
+    with FakeComfyServer(tmp_path / "comfy-output", duration=0.3) as fake:
+        settings = make_settings(tmp_path, fake.url)
+        store = Store(settings.db_path)
+        engine = Engine(settings, store, prompt_vanish_seconds=2)
+        fake.comfy.drop_next = 1  # next accepted prompt is silently lost
+        await engine.start()
+        try:
+            first = await engine.submit(
+                prompt="lost", negative="", width=512, height=512,
+                steps=4, cfg=1.0, seed=1,
+            )
+            second = await engine.submit(
+                prompt="alive", negative="", width=512, height=512,
+                steps=4, cfg=1.0, seed=2,
+            )
+            started = time.time()
+            dead = await engine.wait(first["id"], timeout=20)
+            elapsed = time.time() - started
+            assert dead is not None
+            assert dead["status"] == "failed", dead
+            assert dead["error"] and "lost the workflow" in dead["error"]
+            # Failed inside the vanish window, nowhere near the 20 s timeout.
+            assert elapsed < 10, elapsed
+            # The worker is free: the queued job behind it completed.
+            alive = await engine.wait(second["id"], timeout=30)
+            assert alive is not None
+            assert alive["status"] == "succeeded", alive.get("error")
+            await engine.comfy.close()
+        finally:
+            await engine.stop()
+            store.close()
+
+
 @pytest.mark.parametrize("cfg,expected", [(1.0, "ConditioningZeroOut"), (2.0, "CLIPTextEncode")])
 def test_graph_choice_for_cfg(cfg, expected):
     from gateway.config import Settings as S

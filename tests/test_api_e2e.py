@@ -80,6 +80,9 @@ def test_ui_and_config_are_served(stack):
     ui = httpx.get(base + "/")
     assert ui.status_code == 200
     assert "Fast Image Lab" in ui.text
+    # Five-hour TTL copy (the 5-minute phrasing is gone).
+    assert "Images are deleted 5 hours after they are ready." in ui.text
+    assert "five minutes" not in ui.text
     # The auto-download preference toggle ships in the served page
     # (opt-in by default; the choice persists in the browser).
     assert 'id="auto-download"' in ui.text
@@ -260,3 +263,29 @@ def test_rest_listing_endpoint_is_kept_for_the_web_ui(stack):
     data = httpx.get(base + "/api/generations?limit=24", timeout=10).json()
     assert data["generations"], data
     assert data["generations"][0]["prompt"] == "a cat"
+
+
+def test_generate_persists_style_look_and_quality_tier(stack):
+    base, _ = stack
+    job = httpx.post(
+        base + "/api/generate",
+        json={
+            "prompt": "a lighthouse",
+            "width": 512,
+            "height": 512,
+            "steps": 4,
+            "cfg": 1,
+            "styles": "cinematic,photo",
+            "quality": "detail",
+        },
+        timeout=10,
+    ).json()
+    # The look and the tier travel with the job, not just as prompt text.
+    assert job["styles"] == "cinematic,photo"
+    assert job["quality"] == "detail"
+    current = httpx.get(base + f"/api/generations/{job['id']}", timeout=10).json()
+    assert current["styles"] == "cinematic,photo"
+    assert current["quality"] == "detail"
+    listed = httpx.get(base + "/api/generations?limit=24", timeout=10).json()
+    assert listed["generations"][0]["styles"] == "cinematic,photo"
+    assert listed["generations"][0]["quality"] == "detail"

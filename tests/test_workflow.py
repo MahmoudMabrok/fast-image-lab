@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from gateway.config import Settings
-from gateway.workflow import build_workflow, clamp_dimension, estimated_seconds
+from gateway.workflow import (
+    STYLE_SUFFIXES,
+    build_workflow,
+    clamp_dimension,
+    estimated_seconds,
+    render_prompt,
+)
 
 
 def make_settings(**overrides) -> Settings:
@@ -112,6 +118,21 @@ def test_safetensors_fallback_uses_the_plain_loader():
     )
     assert graph["1"]["class_type"] == "UNETLoader"
     assert graph["1"]["inputs"]["unet_name"] == "flux-2-klein-4b.safetensors"
+
+
+def test_render_prompt_folds_only_known_styles_in_chosen_order():
+    assert render_prompt("a cat", "cinematic") == (
+        "a cat" + STYLE_SUFFIXES["cinematic"]
+    )
+    assert render_prompt("a cat", "photo,cinematic") == (
+        "a cat" + STYLE_SUFFIXES["photo"] + STYLE_SUFFIXES["cinematic"]
+    )
+    # Unknown / malformed / empty style keys are ignored, not echoed.
+    assert render_prompt("a cat", "nope,, cinematic") == (
+        "a cat" + STYLE_SUFFIXES["cinematic"]
+    )
+    assert render_prompt("a cat", "") == "a cat"
+    assert render_prompt("", "anime") == STYLE_SUFFIXES["anime"].lstrip(",").strip()
 
 
 def test_steps_are_capped_at_the_max():
