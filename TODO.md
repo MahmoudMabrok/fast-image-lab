@@ -8,7 +8,21 @@ via a cloudflared quick tunnel. Images are ephemeral (five hours).
 
 ## Build
 
-### 2026-11-25 — rename to fast-image-lab + backport ImageLab features
+### 2026-11-25 — named tunnel config audit on `bonsai` (read-only)
+
+- [x] Inspected `/etc/cloudflared/config.yml` — tunnel `ab3ea48d-…` (`fast-image-lab`), ingress `fast-image-lab.mo3ta.top` → `http://127.0.0.1:3000`
+- [x] Inspected `/root/.cloudflared/` — `cert.pem` + tunnel credentials; `cloudflared tunnel list` shows `fast-image-lab`, `share`, `voice`
+- [x] Confirmed `cloudflared.service` (enabled, active) runs the named tunnel from `/etc/cloudflared/config.yml`
+- [x] Confirmed port mismatch: nothing listens on `3000`; gateway `uvicorn` listens on `8080` → public host returns 502
+- [x] Confirmed duplicate tunnel: `anotherlab-tunnel.service` still runs a quick tunnel to `8080` (`views-finder-red-cities.trycloudflare.com`, 200)
+- [x] Confirmed no Access policy / `ANOTHERLAB_API_KEY=` empty → stable hostname would be unauthenticated
+- [ ] Point ingress at `http://127.0.0.1:8080` (or repoint the gateway) and verify `fast-image-lab.mo3ta.top/api/health` → 200
+- [ ] Retire `anotherlab-tunnel.service` + update `ANOTHERLAB_PUBLIC_URL` to the named host (decision needed)
+- [ ] Set `ANOTHERLAB_API_KEY` before the named host is publicly usable
+
+## Completed
+
+### Done 2026-11-26: rename to fast-image-lab + backport ImageLab features
 
 Rename scope: branding + MCP identity only. Internal identifiers stay:
 `ANOTHERLAB_*` env vars, `anotherlab.service` / `anotherlab-tunnel.service`,
@@ -27,13 +41,12 @@ Rename scope: branding + MCP identity only. Internal identifiers stay:
 - [x] UI: live progress without refresh (SSE-starvation detection + 1 s poll fallback, wake handlers)
 - [x] UI: generate sends structured `styles` / `quality` instead of a suffix-baked prompt
 - [x] `make test` green with new coverage (store, workflow, engine, API, MCP) — 34/34
-- [ ] Deploy to `bonsai`; `comfyui` + `anotherlab` services `active (running)`
-- [ ] Quick-tunnel URL re-verified publicly (health + UI + MCP)
-- [ ] One public generation through the new UI path
-- [ ] README public URL + verification date updated
+- [x] Deploy to `bonsai` (`make deploy`); `comfyui` + `anotherlab` `active (running)`; `/api/health` `ready: true`
+- [x] `bonsai` `/etc/anotherlab.env`: `ANOTHERLAB_TTL_SECONDS` 300 → 18000, restart, `/api/health` reports `ttl_seconds: 18000`
+- [x] Quick-tunnel URL re-verified publicly: `https://views-finder-red-cities.trycloudflare.com` — `/api/health` ready, UI page (Fast Image Lab, 5-hour copy), served `app.js` carries live-progress/recipe code (grep 11), MCP `initialize` → `serverInfo.fast-image-lab`
+- [x] One public generation (256×256) through the new UI path — `img_rrm36DKTHujS`: `styles:"cinematic"`, `quality:"draft"`, clean stored prompt `a lighthouse in a storm`, progress 0.05→1.0 over the poll path, 62 s; text encoder received `… cinematic lighting, anamorphic lens, film still, dramatic contrast` (render_prompt live); valid PNG served from the public URL
+- [x] README public URL + verification date updated (2026-11-26)
 - [x] Everything pushed to `github.com/MahmoudMabrok/fast-image-lab` — `main` (clean baseline) + `wip/imagelab-backport` (rename + backport + tests, 2 commits `142c62c`, `1d43fd0`)
-
-## Completed
 
 ### 2026-11-25 — repo, VM, tunnel, and first generations
 - [x] Research model + CPU paths (1-bit GGUF exists; gemlite is CUDA-only)

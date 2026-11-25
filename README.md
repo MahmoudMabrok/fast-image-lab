@@ -104,10 +104,11 @@ generated links and MCP responses use the public host.
 - **UI:** https://views-finder-red-cities.trycloudflare.com
 - **MCP:** https://views-finder-red-cities.trycloudflare.com/mcp
 
-**Status:** the tunnel above is live as of **2026-11-25** — UI page,
-`/api/health`, and an MCP `initialize` call all verified from the public
-internet. The engine runs the distilled FLUX.2-Klein-4B build (2-bit Q2_K
-GGUF) on the `bonsai` VM.
+**Status:** the tunnel above is live as of **2026-11-26** — UI page,
+`/api/health` (5-hour TTL), an MCP `initialize` call, and a full 256×256
+generation with a saved style preset all verified from the public internet.
+The engine runs the distilled FLUX.2-Klein-4B build (2-bit Q2_K GGUF) on the
+`bonsai` VM.
 
 A quick tunnel needs no Cloudflare account. The hostname is **ephemeral**: it
 changes whenever `anotherlab-tunnel` restarts. For a stable hostname, create a
