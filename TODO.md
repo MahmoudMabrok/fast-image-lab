@@ -14,23 +14,24 @@ Rename scope: branding + MCP identity only. Internal identifiers stay:
 `ANOTHERLAB_*` env vars, `anotherlab.service` / `anotherlab-tunnel.service`,
 `/srv/anotherlab`, `/etc/anotherlab.env`, browser localStorage keys.
 
-- [ ] Repo directory renamed to `/Users/appleworld/Documents/fast-image-lab`
-- [ ] User-visible "Fast Image Lab" strings → "Fast Image Lab" (web, README, AGENTS, docs, Makefile, scripts, systemd `Description=`)
-- [ ] MCP identity renamed: serverInfo `fast-image-lab`, resource `fast-image-lab://engine`, `/api/config` `mcp.name`
-- [ ] TTL default `18000` s (5 hours) in `config.py` + `.env.example` + docs copy
-- [ ] Store: `styles` / `quality` columns and idempotent migration for live DBs
-- [ ] Workflow: `STYLE_SUFFIXES` + `render_prompt()`; engine folds styles into the text prompt
-- [ ] API: `/api/generate` accepts `styles` / `quality`; every job response carries them
-- [ ] Engine: lost-prompt fail-fast (`prompt_vanish_seconds=60`) frees the worker
-- [ ] UI: `h:mm:ss` TTL clock, 5-hour copy, warn/crit at 30 / 10 minutes
-- [ ] UI: per-card recipe details (frame · steps · cfg · seed · quality · looks) + re-run restores the recipe
-- [ ] UI: live progress without refresh (SSE-starvation detection + 1 s poll fallback, wake handlers)
-- [ ] UI: generate sends structured `styles` / `quality` instead of a suffix-baked prompt
-- [ ] `make test` green with new coverage (store, workflow, engine, API, MCP)
+- [x] Repo directory renamed to `/Users/appleworld/Documents/fast-image-lab`
+- [x] User-visible "Fast Image Lab" strings → "Fast Image Lab" (web, README, AGENTS, docs, Makefile, scripts, systemd `Description=`)
+- [x] MCP identity renamed: serverInfo `fast-image-lab`, resource `fast-image-lab://engine`, `/api/config` `mcp.name`
+- [x] TTL default `18000` s (5 hours) in `config.py` + `.env.example` + docs copy (README env table, ARCHITECTURE, MCP, AGENTS all 5-hour)
+- [x] Store: `styles` / `quality` columns and idempotent migration for live DBs
+- [x] Workflow: `STYLE_SUFFIXES` + `render_prompt()`; engine folds styles into the text prompt
+- [x] API: `/api/generate` accepts `styles` / `quality`; every job response carries them
+- [x] Engine: lost-prompt fail-fast (`prompt_vanish_seconds=60`) frees the worker
+- [x] UI: `h:mm:ss` TTL clock, 5-hour copy, warn/crit at 30 / 10 minutes
+- [x] UI: per-card recipe details (frame · steps · cfg · seed · quality · looks) + re-run restores the recipe
+- [x] UI: live progress without refresh (SSE-starvation detection + 1 s poll fallback, wake handlers)
+- [x] UI: generate sends structured `styles` / `quality` instead of a suffix-baked prompt
+- [x] `make test` green with new coverage (store, workflow, engine, API, MCP) — 34/34
 - [ ] Deploy to `bonsai`; `comfyui` + `anotherlab` services `active (running)`
 - [ ] Quick-tunnel URL re-verified publicly (health + UI + MCP)
 - [ ] One public generation through the new UI path
 - [ ] README public URL + verification date updated
+- [x] Everything pushed to `github.com/MahmoudMabrok/fast-image-lab` — `main` (clean baseline) + `wip/imagelab-backport` (rename + backport + tests, 2 commits `142c62c`, `1d43fd0`)
 
 ## Completed
 
