@@ -1,9 +1,9 @@
 # AGENTS.md
 
-AnotherLab is a self-hosted Bonsai Image 4B (FLUX.2-klein) image generation
+Fast Image Lab is a self-hosted Bonsai Image 4B (FLUX.2-klein) image generation
 studio: a FastAPI gateway (queue, SQLite, SSE, TTL reaper, MCP at `/mcp`), a
 build-free vanilla JS UI in `web/`, and ComfyUI as the inference engine.
-Images self-destruct five minutes after completion.
+Images self-destruct five hours after completion.
 
 ## Task tracking (mandatory)
 

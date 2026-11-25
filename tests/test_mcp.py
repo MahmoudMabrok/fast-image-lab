@@ -72,7 +72,7 @@ async def test_initialize_returns_a_session(server):
     )
     assert result is not None
     assert result["result"]["protocolVersion"] == "2025-06-18"
-    assert result["result"]["serverInfo"]["name"] == "anotherlab"
+    assert result["result"]["serverInfo"]["name"] == "fast-image-lab"
     assert headers["Mcp-Session-Id"]
 
 
@@ -102,14 +102,14 @@ async def test_resources_list_has_no_generation_listing(server):
     )
     assert result is not None
     uris = {resource["uri"] for resource in result["result"]["resources"]}
-    assert uris == {"anotherlab://engine"}
+    assert uris == {"fast-image-lab://engine"}
 
     read, _ = await server.handle(
         {
             "jsonrpc": "2.0",
             "id": 2,
             "method": "resources/read",
-            "params": {"uri": "anotherlab://generations"},
+            "params": {"uri": "fast-image-lab://generations"},
         },
         None,
     )

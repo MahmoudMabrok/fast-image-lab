@@ -304,7 +304,7 @@ class McpServer:
                             "tools": {"listChanged": False},
                             "resources": {"listChanged": False, "subscribe": False},
                         },
-                        "serverInfo": {"name": "anotherlab", "version": "1.0.0"},
+                        "serverInfo": {"name": "fast-image-lab", "version": "1.0.0"},
                         "instructions": (
                             "Bonsai Image 4B (FLUX.2-Klein) image generation. Call generate_image; "
                             "the PNG is returned inline and is deleted "
@@ -344,7 +344,7 @@ class McpServer:
                     {
                         "resources": [
                             {
-                                "uri": "anotherlab://engine",
+                                "uri": "fast-image-lab://engine",
                                 "name": "Engine status",
                                 "mimeType": "application/json",
                             },
@@ -356,7 +356,7 @@ class McpServer:
 
         if method == "resources/read":
             uri = str(params.get("uri") or "")
-            if uri == "anotherlab://engine":
+            if uri == "fast-image-lab://engine":
                 body = self.engine.status()
             else:
                 return _error(request_id, -32602, f"unknown resource: {uri}"), headers

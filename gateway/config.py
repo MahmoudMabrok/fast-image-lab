@@ -64,7 +64,7 @@ class Settings:
     max_prompt_chars: int = field(default_factory=lambda: _int("ANOTHERLAB_MAX_PROMPT_CHARS", 4000))
 
     # Jobs
-    ttl_seconds: int = field(default_factory=lambda: _int("ANOTHERLAB_TTL_SECONDS", 300))
+    ttl_seconds: int = field(default_factory=lambda: _int("ANOTHERLAB_TTL_SECONDS", 18000))
     job_timeout_seconds: int = field(default_factory=lambda: _int("ANOTHERLAB_JOB_TIMEOUT", 3600))
     history_keep_seconds: int = field(
         default_factory=lambda: _int("ANOTHERLAB_HISTORY_KEEP_SECONDS", 86400)

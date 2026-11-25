@@ -1,14 +1,36 @@
-# AnotherLab — Bonsai Image 4B (distilled FLUX.2-Klein-4B) on kube-labs
+# Fast Image Lab — Bonsai Image 4B (distilled FLUX.2-Klein-4B) on kube-labs
 
 Self-hosted text-to-image studio: FastAPI HTTP wrapper + ComfyUI (CPU) engine
 running the distilled FLUX.2-Klein-4B build that Bonsai Image 4B is quantized
 from (Bonsai's 1-bit Q1_0 file is unloadable — no Q1_0 dequantizer exists in
 any current toolchain — so the CPU build uses its 2-bit Q2_K GGUF), exposed
-via a cloudflared quick tunnel. Images are ephemeral.
+via a cloudflared quick tunnel. Images are ephemeral (five hours).
 
 ## Build
 
-(in progress — add new tasks here)
+### 2026-11-25 — rename to fast-image-lab + backport ImageLab features
+
+Rename scope: branding + MCP identity only. Internal identifiers stay:
+`ANOTHERLAB_*` env vars, `anotherlab.service` / `anotherlab-tunnel.service`,
+`/srv/anotherlab`, `/etc/anotherlab.env`, browser localStorage keys.
+
+- [ ] Repo directory renamed to `/Users/appleworld/Documents/fast-image-lab`
+- [ ] User-visible "Fast Image Lab" strings → "Fast Image Lab" (web, README, AGENTS, docs, Makefile, scripts, systemd `Description=`)
+- [ ] MCP identity renamed: serverInfo `fast-image-lab`, resource `fast-image-lab://engine`, `/api/config` `mcp.name`
+- [ ] TTL default `18000` s (5 hours) in `config.py` + `.env.example` + docs copy
+- [ ] Store: `styles` / `quality` columns and idempotent migration for live DBs
+- [ ] Workflow: `STYLE_SUFFIXES` + `render_prompt()`; engine folds styles into the text prompt
+- [ ] API: `/api/generate` accepts `styles` / `quality`; every job response carries them
+- [ ] Engine: lost-prompt fail-fast (`prompt_vanish_seconds=60`) frees the worker
+- [ ] UI: `h:mm:ss` TTL clock, 5-hour copy, warn/crit at 30 / 10 minutes
+- [ ] UI: per-card recipe details (frame · steps · cfg · seed · quality · looks) + re-run restores the recipe
+- [ ] UI: live progress without refresh (SSE-starvation detection + 1 s poll fallback, wake handlers)
+- [ ] UI: generate sends structured `styles` / `quality` instead of a suffix-baked prompt
+- [ ] `make test` green with new coverage (store, workflow, engine, API, MCP)
+- [ ] Deploy to `bonsai`; `comfyui` + `anotherlab` services `active (running)`
+- [ ] Quick-tunnel URL re-verified publicly (health + UI + MCP)
+- [ ] One public generation through the new UI path
+- [ ] README public URL + verification date updated
 
 ## Completed
 

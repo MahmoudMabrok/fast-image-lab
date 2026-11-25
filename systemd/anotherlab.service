@@ -1,5 +1,5 @@
 [Unit]
-Description=AnotherLab gateway (UI, REST, MCP)
+Description=Fast Image Lab gateway (UI, REST, MCP)
 After=network.target comfyui.service
 Wants=comfyui.service
 

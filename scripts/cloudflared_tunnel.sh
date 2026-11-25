@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish AnotherLab through a Cloudflare quick tunnel.
+# Publish Fast Image Lab through a Cloudflare quick tunnel.
 #   ./scripts/cloudflared_tunnel.sh [machine]
 set -euo pipefail
 

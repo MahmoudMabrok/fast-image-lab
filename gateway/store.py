@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS jobs (
     filename      TEXT,
     bytes         INTEGER,
     prompt_id     TEXT,
-    source        TEXT NOT NULL DEFAULT 'web'
+    source        TEXT NOT NULL DEFAULT 'web',
+    styles        TEXT NOT NULL DEFAULT '',
+    quality       TEXT
 );
 CREATE INDEX IF NOT EXISTS jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS jobs_created ON jobs(created_at DESC);
@@ -60,6 +62,22 @@ class Store:
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA synchronous=NORMAL")
         self._db.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add columns introduced after a database already exists.
+
+        Fresh databases get them from SCHEMA; an existing one (live deploy)
+        is brought up to date idempotently.
+        """
+        with self._lock:
+            have = {r[1] for r in self._db.execute("PRAGMA table_info(jobs)")}
+            for column, sql in (
+                ("styles", "ALTER TABLE jobs ADD COLUMN styles TEXT NOT NULL DEFAULT ''"),
+                ("quality", "ALTER TABLE jobs ADD COLUMN quality TEXT"),
+            ):
+                if column not in have:
+                    self._db.execute(sql)
 
     def close(self) -> None:
         with self._lock:

@@ -79,7 +79,7 @@ def test_ui_and_config_are_served(stack):
     base, _ = stack
     ui = httpx.get(base + "/")
     assert ui.status_code == 200
-    assert "AnotherLab" in ui.text
+    assert "Fast Image Lab" in ui.text
     # The auto-download preference toggle ships in the served page
     # (opt-in by default; the choice persists in the browser).
     assert 'id="auto-download"' in ui.text
@@ -155,7 +155,7 @@ def test_mcp_over_http_returns_the_png(stack):
     )
     assert init.status_code == 200
     session = init.headers["mcp-session-id"]
-    assert init.json()["result"]["serverInfo"]["name"] == "anotherlab"
+    assert init.json()["result"]["serverInfo"]["name"] == "fast-image-lab"
     headers["Mcp-Session-Id"] = session
 
     tools = httpx.post(

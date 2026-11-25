@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install and run a Cloudflare quick tunnel for the AnotherLab gateway.
+# Install and run a Cloudflare quick tunnel for the Fast Image Lab gateway.
 #
 # A quick tunnel needs no Cloudflare account: cloudflared asks the edge for a
 # random https://<name>.trycloudflare.com hostname and proxies it to

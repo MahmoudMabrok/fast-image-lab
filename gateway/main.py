@@ -1,4 +1,4 @@
-"""AnotherLab gateway: REST API, live events, static UI and MCP in one process."""
+"""Fast Image Lab gateway: REST API, live events, static UI and MCP in one process."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="AnotherLab",
+    title="Fast Image Lab",
     description="Bonsai Image 4B (FLUX.2-Klein) image generation with self-destructing images and MCP access.",
     version="1.0.0",
     lifespan=lifespan,
@@ -91,6 +91,8 @@ class GenerateRequest(BaseModel):
     steps: int | None = None
     cfg: float | None = None
     seed: int | None = None
+    styles: str | None = None
+    quality: str | None = None
 
 
 @app.get("/api/health")
@@ -106,7 +108,7 @@ async def config() -> dict[str, Any]:
         "public_url": base,
         "mcp": {
             "http": f"{base}/mcp" if base else "/mcp",
-            "name": "anotherlab",
+            "name": "fast-image-lab",
         },
         "device_label": settings.device_label,
         "auth_required": bool(settings.api_key),
@@ -125,6 +127,8 @@ async def generate(body: GenerateRequest) -> dict[str, Any]:
             cfg=body.cfg if body.cfg is not None else settings.default_cfg,
             seed=body.seed,
             source="web",
+            styles=body.styles or "",
+            quality=body.quality or None,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -188,7 +192,7 @@ async def image(job_id: str, download: bool = False) -> FileResponse:
         raise HTTPException(status_code=410, detail="image expired")
     headers = {"Cache-Control": "no-store, max-age=0", "Pragma": "no-cache"}
     if download:
-        headers["Content-Disposition"] = f'attachment; filename="anotherlab-{job_id}.png"'
+        headers["Content-Disposition"] = f'attachment; filename="fast-image-lab-{job_id}.png"'
     return FileResponse(path, media_type="image/png", headers=headers)
 
 

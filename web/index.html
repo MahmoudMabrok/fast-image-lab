@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#0a0a0c" />
-  <title>AnotherLab — Bonsai Image 4B</title>
-  <meta name="description" content="Generate images with Bonsai Image 4B (FLUX.2-klein) on your own machine. Images self-destruct after five minutes." />
+  <title>Fast Image Lab — Bonsai Image 4B</title>
+  <meta name="description" content="Generate images with Bonsai Image 4B (FLUX.2-klein) on your own machine. Images self-destruct after five hours." />
   <link rel="icon" href="/favicon.svg" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
@@ -13,7 +13,7 @@
   <div class="grain" aria-hidden="true"></div>
 
   <header class="topbar">
-    <a class="brand" href="/" aria-label="AnotherLab home">
+    <a class="brand" href="/" aria-label="Fast Image Lab home">
       <span class="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 32 32" fill="none">
           <path d="M16 27v-9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
@@ -25,7 +25,7 @@
         </svg>
       </span>
       <span class="brand-text">
-        <strong>AnotherLab</strong>
+        <strong>Fast Image Lab</strong>
         <em>Bonsai Image 4B</em>
       </span>
     </a>
@@ -131,7 +131,7 @@
         <span class="generate-meta" id="generate-meta">512 × 512 · 4 steps</span>
         <span class="kbd">⌘↵</span>
       </button>
-      <p class="note center" id="generate-note">Images are deleted 5 minutes after they are ready.</p>
+      <p class="note center" id="generate-note">Images are deleted 5 hours after they are ready.</p>
     </section>
 
     <section class="stage panel" aria-live="polite">
@@ -200,7 +200,7 @@
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M8 6V4h4v2m-6 0 .7 10h6.6L14 6M8.5 9v4m3-4v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
               </button>
             </div>
-            <div class="ttl-badge" id="ttl-badge"><span class="ttl-dot"></span><span id="ttl-text">5:00</span></div>
+            <div class="ttl-badge" id="ttl-badge"><span class="ttl-dot"></span><span id="ttl-text">5:00:00</span></div>
           </figure>
           <div class="result-meta">
             <p id="result-prompt"></p>
@@ -221,7 +221,7 @@
   <section class="recent" aria-labelledby="recent-title">
     <div class="recent-head">
       <h2 id="recent-title">Recent</h2>
-      <span class="mono dim">auto-deleted after 5 min</span>
+      <span class="mono dim">auto-deleted after 5 hours</span>
     </div>
     <div class="recent-strip" id="recent-strip">
       <div class="recent-empty" id="recent-empty">Generated images will appear here.</div>
@@ -229,7 +229,7 @@
   </section>
 
   <footer class="footer">
-    <span>AnotherLab</span>
+    <span>Fast Image Lab</span>
     <span class="dim">Self-hosted · Bonsai Image 4B (2-bit GGUF) on ComfyUI</span>
     <span class="mono dim" id="footer-version"></span>
   </footer>
@@ -275,7 +275,7 @@
           <pre id="mcp-stdio"></pre>
           <button class="copy" data-copy="mcp-stdio" type="button">Copy</button>
         </div>
-        <p class="note">Images are returned inline as base64 and also served from a URL. Both die five minutes after generation, so an agent should save the bytes immediately.</p>
+        <p class="note">Images are returned inline as base64 and also served from a URL. Both die five hours after generation, so an agent should save the bytes immediately.</p>
       </div>
 
       <div class="tab-panel" data-panel="tools" hidden>

@@ -1,5 +1,5 @@
 [Unit]
-Description=Cloudflare quick tunnel for AnotherLab
+Description=Cloudflare quick tunnel for Fast Image Lab
 After=network-online.target anotherlab.service
 Wants=network-online.target anotherlab.service
 

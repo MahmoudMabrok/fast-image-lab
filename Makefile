@@ -6,7 +6,7 @@ PY ?= python3
 .PHONY: help install test run deploy setup models tunnel tunnel-platform trial logs status clean
 
 help:
-	@echo "AnotherLab — Bonsai Image 4B on kube-labs"
+	@echo "Fast Image Lab — Bonsai Image 4B on kube-labs"
 	@echo
 	@echo "  make install   local venv + dev dependencies"
 	@echo "  make test      run the test suite"

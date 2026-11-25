@@ -1,5 +1,5 @@
 [Unit]
-Description=ComfyUI engine for AnotherLab (Bonsai Image 4B)
+Description=ComfyUI engine for Fast Image Lab (Bonsai Image 4B)
 After=network.target
 
 [Service]

@@ -1,8 +1,8 @@
-# AnotherLab
+# Fast Image Lab
 
 A small, self-hosted image generation studio for **[Bonsai Image 4B](https://huggingface.co/Comfy-Org/FLux-2-Klein-4B)** — a quantized distillation of FLUX.2-Klein-4B (4B DiT + Qwen3-4B text encoder + FLUX.2 VAE) that runs on CPU. It gives you a real UI and exposes the same engine to AI agents over the Model Context Protocol.
 
-Every generated PNG is deleted **five minutes after it is ready**. That is the point: this is a sketchpad, not a gallery.
+Every generated PNG is deleted **five hours after it is ready**. That is the point: this is a sketchpad, not a gallery.
 
 ```
 ┌──────────────────────────────┐        ┌──────────────────────────────┐
@@ -133,7 +133,7 @@ The gateway speaks Streamable HTTP at `/mcp`. No SDK is required on the server s
 ### Claude Code
 
 ```bash
-claude mcp add --transport http anotherlab https://<your-machine>/mcp
+claude mcp add --transport http fast-image-lab https://<your-machine>/mcp
 ```
 
 ### Generic client config
@@ -141,7 +141,7 @@ claude mcp add --transport http anotherlab https://<your-machine>/mcp
 ```json
 {
   "mcpServers": {
-    "anotherlab": {
+    "fast-image-lab": {
       "type": "http",
       "url": "https://<your-machine>/mcp"
     }
@@ -209,7 +209,7 @@ Copy `.env.example` to `/etc/anotherlab.env` on the machine (the deploy script d
 | `ANOTHERLAB_CLIP_TYPE` | `flux2` | ComfyUI CLIP type |
 | `ANOTHERLAB_VAE` | `flux2-vae.safetensors` | VAE |
 | `ANOTHERLAB_DEVICE_LABEL` | `CPU` | Shown in the UI |
-| `ANOTHERLAB_TTL_SECONDS` | `300` | Image lifetime after completion |
+| `ANOTHERLAB_TTL_SECONDS` | `18000` | Image lifetime after completion (5 hours) |
 | `ANOTHERLAB_JOB_TIMEOUT` | `3600` | Hard per-job timeout |
 | `ANOTHERLAB_DEFAULT_WIDTH/HEIGHT` | `512` | Defaults |
 | `ANOTHERLAB_DEFAULT_STEPS` | `4` | Defaults (native pace) |

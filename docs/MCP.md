@@ -1,6 +1,6 @@
 # MCP
 
-AnotherLab exposes a Model Context Protocol server at `POST /mcp` using Streamable HTTP. It is implemented directly against JSON-RPC, so it works with any client that speaks the protocol.
+Fast Image Lab exposes a Model Context Protocol server at `POST /mcp` using Streamable HTTP. It is implemented directly against JSON-RPC, so it works with any client that speaks the protocol.
 
 - Protocol versions: `2024-11-05`, `2025-03-26`, `2025-06-18`
 - Transport: HTTP POST, JSON responses (no SSE upgrade required)
@@ -12,13 +12,13 @@ AnotherLab exposes a Model Context Protocol server at `POST /mcp` using Streamab
 ### Claude Code
 
 ```bash
-claude mcp add --transport http anotherlab https://<machine>/mcp
+claude mcp add --transport http fast-image-lab https://<machine>/mcp
 ```
 
 With a key:
 
 ```bash
-claude mcp add --transport http anotherlab https://<machine>/mcp \
+claude mcp add --transport http fast-image-lab https://<machine>/mcp \
   --header "Authorization: Bearer $ANOTHERLAB_API_KEY"
 ```
 
@@ -27,7 +27,7 @@ claude mcp add --transport http anotherlab https://<machine>/mcp \
 ```json
 {
   "mcpServers": {
-    "anotherlab": {
+    "fast-image-lab": {
       "type": "http",
       "url": "https://<machine>/mcp",
       "headers": {
@@ -49,7 +49,7 @@ python -m gateway.mcp_stdio --url https://<machine>/mcp --key <API_KEY>
 ```json
 {
   "mcpServers": {
-    "anotherlab": {
+    "fast-image-lab": {
       "command": "python",
       "args": ["-m", "gateway.mcp_stdio", "--url", "https://<machine>/mcp"]
     }
@@ -78,8 +78,8 @@ Response:
     "tools":{"listChanged":false},
     "resources":{"listChanged":false,"subscribe":false}
   },
-  "serverInfo":{"name":"anotherlab","version":"1.0.0"},
-  "instructions":"Bonsai Image 4B (FLUX.2-klein) generation. Call generate_image; the PNG is returned inline and is deleted 300s after creation."
+  "serverInfo":{"name":"fast-image-lab","version":"1.0.0"},
+  "instructions":"Bonsai Image 4B (FLUX.2-klein) generation. Call generate_image; the PNG is returned inline and is deleted 18000s after creation."
 }}
 ```
 
@@ -158,7 +158,7 @@ When the image is ready, the response also carries the PNG:
 }
 ```
 
-**Agents must persist the bytes immediately.** Both the inline base64 and `image_url` point at a file that the reaper deletes five minutes after completion.
+**Agents must persist the bytes immediately.** Both the inline base64 and `image_url` point at a file that the reaper deletes five hours after completion.
 
 ### `get_generation`
 
@@ -190,10 +190,10 @@ No arguments. Returns the full `/api/health` payload: device, ComfyUI version, q
 
 | URI | Content |
 |---|---|
-| `anotherlab://engine` | Engine status JSON |
+| `fast-image-lab://engine` | Engine status JSON |
 
 ```json
-{"jsonrpc":"2.0","id":6,"method":"resources/read","params":{"uri":"anotherlab://engine"}}
+{"jsonrpc":"2.0","id":6,"method":"resources/read","params":{"uri":"fast-image-lab://engine"}}
 ```
 
 ## Long-running calls behind a tunnel

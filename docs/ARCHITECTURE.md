@@ -1,6 +1,6 @@
 # Architecture
 
-AnotherLab is two processes and one static directory.
+Fast Image Lab is two processes and one static directory.
 
 ```
 systemd: comfyui.service     systemd: anotherlab.service + anotherlab-tunnel.service
@@ -116,7 +116,7 @@ The gateway copies the ComfyUI output into `data/images` and immediately deletes
 
 ## TTL and deletion
 
-`expires_at` is set once, on success: `finished_at + ANOTHERLAB_TTL_SECONDS` (300 by default). The reaper runs every two seconds:
+`expires_at` is set once, on success: `finished_at + ANOTHERLAB_TTL_SECONDS` (18000 / five hours by default). The reaper runs every two seconds:
 
 ```python
 for job in store.expire_due():          # UPDATE … WHERE expires_at <= now

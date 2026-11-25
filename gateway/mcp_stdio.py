@@ -1,4 +1,4 @@
-"""Stdio bridge: expose a remote AnotherLab MCP endpoint to a local agent.
+"""Stdio bridge: expose a remote Fast Image Lab MCP endpoint to a local agent.
 
     python -m gateway.mcp_stdio --url https://<machine>.kube-labs.net/mcp
 
@@ -15,7 +15,7 @@ import httpx
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="AnotherLab MCP stdio bridge")
+    parser = argparse.ArgumentParser(description="Fast Image Lab MCP stdio bridge")
     parser.add_argument("--url", required=True, help="Streamable HTTP MCP endpoint")
     parser.add_argument("--key", default="", help="API key, if the server requires one")
     args = parser.parse_args()
