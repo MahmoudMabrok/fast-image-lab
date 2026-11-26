@@ -7,12 +7,23 @@ import dataclasses
 import time
 
 import pytest
+from PIL import Image
 
 from gateway.config import Settings
 from gateway.engine import Engine
 from gateway.store import Store
 
+from . import fake_comfy
 from .fake_comfy import FakeComfyServer
+
+
+def big_png_bytes(size: int = 64) -> bytes:
+    """A flat (size x size) PNG, large enough that the overlay will draw."""
+    import io
+
+    buf = io.BytesIO()
+    Image.new("RGB", (size, size), (20, 40, 70)).save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def make_settings(tmp_path, comfy_url: str) -> Settings:
@@ -140,6 +151,56 @@ async def test_lost_prompt_fails_fast_and_frees_the_worker(tmp_path):
             assert alive is not None
             assert alive["status"] == "succeeded", alive.get("error")
             await engine.comfy.close()
+        finally:
+            await engine.stop()
+            store.close()
+
+
+async def test_generation_applies_caption_text(tmp_path):
+    """Requested `texts` are composited onto the decoded PNG by the worker:
+    the model never sees them (the workflow prompt is untouched) and the
+    stored job carries the caption recipe; a bad caption is rejected at
+    submit time, not after the render."""
+    (tmp_path / "comfy-output").mkdir()
+    with FakeComfyServer(tmp_path / "comfy-output", duration=0.8, image=big_png_bytes()) as fake:
+        settings = make_settings(tmp_path, fake.url)
+        store = Store(settings.db_path)
+        engine = Engine(settings, store)
+        await engine.start()
+        try:
+            job = await engine.submit(
+                prompt="a cat",
+                negative="",
+                width=512,
+                height=512,
+                steps=4,
+                cfg=1.0,
+                seed=7,
+                texts=[{"text": "قطة", "position": "top-left", "font": "naskh"}],
+            )
+            assert job["texts"] is not None  # JSON-serialized recipe
+            done = await engine.wait(job["id"], timeout=20)
+            assert done is not None
+            assert done["status"] == "succeeded", done.get("error")
+            path = settings.images_dir / done["filename"]
+            img = Image.open(path).convert("RGB")
+            assert (img.width, img.height) == (64, 64)
+            # The overlay drew ink on top of the flat canvas.
+            bg = img.getpixel((0, 0))
+            assert any(
+                abs(px[0] - bg[0]) + abs(px[1] - bg[1]) + abs(px[2] - bg[2]) > 60
+                for px in getattr(img, "get_flattened_data", img.getdata)()
+            )
+            # The recipe is exposed parsed on the public job.
+            public = engine.public_job(store.get(job["id"]))
+            assert public["texts"] == [{"text": "قطة", "position": "top-left", "color": None, "font": "naskh"}]
+            # A bad caption fails at submit time with a clear message.
+            with pytest.raises(ValueError, match="position"):
+                await engine.submit(
+                    prompt="a cat", negative="", width=512, height=512,
+                    steps=4, cfg=1.0, seed=8,
+                    texts=[{"text": "x", "position": "middle"}],
+                )
         finally:
             await engine.stop()
             store.close()

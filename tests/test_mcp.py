@@ -184,3 +184,67 @@ def test_tool_schemas_follow_the_dimension_limits():
     assert schema["properties"]["steps"]["default"] == 4
     assert schema["properties"]["steps"]["minimum"] == 4
     assert schema["required"] == ["prompt"]
+
+
+def test_generate_schema_exposes_multilingual_texts():
+    schema = {t["name"]: t for t in build_tools(Settings())}["generate_image"]["inputSchema"]
+    texts = schema["properties"]["texts"]
+    assert texts["type"] == "array"
+    assert texts["maxItems"] == 4
+    item = texts["items"]
+    assert item["required"] == ["text"]
+    assert item["properties"]["font"]["enum"] == ["naskh", "kufi", "sans"]
+    assert len(item["properties"]["position"]["enum"]) == 7
+    # The distilled model has no LoRA; captions are drawn, not baked in.
+    assert "lora_strength" not in schema["properties"]
+
+
+async def test_generate_passes_texts(live_server):
+    result, _ = await live_server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+                "name": "generate_image",
+                "arguments": {
+                    "prompt": "a cat",
+                    "wait_seconds": 0,
+                    "texts": [
+                        {"text": "قطة", "position": "top-left", "font": "kufi"},
+                        {"text": "القط", "position": "bottom-right"},
+                    ],
+                },
+            },
+        },
+        None,
+    )
+    assert result is not None
+    assert result["result"]["isError"] is False, result
+    summary = result["result"]["structuredContent"]
+    assert summary["texts"] == [
+        {"text": "قطة", "position": "top-left", "color": None, "font": "kufi"},
+        {"text": "القط", "position": "bottom-right", "color": None, "font": "naskh"},
+    ]
+    await live_server.engine.cancel(summary["id"])
+
+
+async def test_generate_rejects_bad_texts(live_server):
+    result, _ = await live_server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {
+                "name": "generate_image",
+                "arguments": {
+                    "prompt": "a cat",
+                    "texts": [{"text": "x", "font": "comic-sans"}],
+                },
+            },
+        },
+        None,
+    )
+    assert result is not None
+    assert result["result"]["isError"] is True
+    assert "font" in result["result"]["content"][0]["text"]

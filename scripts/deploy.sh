@@ -10,7 +10,7 @@ echo "==> Uploading to $MACHINE:/srv/anotherlab"
 kube-labs exec "$MACHINE" -- mkdir -p /srv/anotherlab
 tar -czf - \
   --exclude .git --exclude .venv --exclude __pycache__ --exclude data \
-  --exclude '*.pyc' . \
+  --exclude '*.pyc' --exclude '._*' --exclude '.DS_Store' . \
   | kube-labs exec "$MACHINE" -- tar -xzf - -C /srv/anotherlab
 
 echo "==> Installing"

@@ -14,6 +14,7 @@ from typing import Any, AsyncIterator
 
 from .comfy import ComfyClient, ComfyError, extract_image
 from .config import Settings
+from .images.text import apply_caption, dumps, loads, validate_texts
 from .store import ACTIVE, Store
 from .workflow import build_workflow, estimated_seconds, render_prompt
 
@@ -111,6 +112,7 @@ class Engine:
             return None
         out = dict(job)
         out.pop("prompt_id", None)
+        out["texts"] = loads(job.get("texts"))
         out["image_url"] = f"/api/images/{job['id']}" if job.get("filename") else None
         if job["status"] in ACTIVE:
             out["queue_position"] = self.store.queue_position(job["id"])
@@ -162,12 +164,17 @@ class Engine:
         source: str = "web",
         styles: str = "",
         quality: str | None = None,
+        texts: Any = None,
     ) -> dict[str, Any]:
         prompt = prompt.strip()
         if not prompt:
             raise ValueError("prompt is required")
         if len(prompt) > self.settings.max_prompt_chars:
             raise ValueError(f"prompt is longer than {self.settings.max_prompt_chars} characters")
+        # The model cannot draw script glyphs, so requested caption text is
+        # composited onto the PNG after decode. Validate it here (at submit
+        # time) with a clear error, not on the worker after a long render.
+        text_items = validate_texts(texts)
         if seed is None or int(seed) < 0:
             seed = secrets.randbelow(2**32)
         job = {
@@ -194,6 +201,7 @@ class Engine:
             "source": source,
             "styles": (styles or "").strip(),
             "quality": (quality or "").strip() or None,
+            "texts": dumps(text_items) if text_items else None,
         }
         job = self.store.create(job)
         self.publish({"type": "job", "job": self.public_job(job)})
@@ -409,6 +417,16 @@ class Engine:
             await asyncio.to_thread(shutil.copyfile, src, dest)
             with contextlib.suppress(OSError):
                 src.unlink()
+
+            # Caption text (Arabic or otherwise) is drawn over the decoded
+            # image: the model itself cannot render a script, so anything
+            # requested in `texts` is composited here, reliably. A failure
+            # here fails the job (the worker's handler) — it must never be
+            # swallowed after a long render.
+            if job.get("texts"):
+                await asyncio.to_thread(
+                    apply_caption, dest, loads(job["texts"])
+                )
 
             now = time.time()
             job = self.store.update(

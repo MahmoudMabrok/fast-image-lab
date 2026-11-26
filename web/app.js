@@ -498,6 +498,70 @@
     syncPoll();
   }
 
+  // ------------------------------------------------------- in-image text rows
+  const TEXT_POSITIONS = [
+    "top-left", "top-center", "top-right",
+    "bottom-left", "bottom-center", "bottom-right", "center",
+  ];
+  const TEXT_FONTS = [["naskh", "Naskh"], ["kufi", "Kufi"], ["sans", "Sans"]];
+  const TEXT_MAX = 4;
+
+  function updateTextCount() {
+    const n = $$("#text-rows .text-row").length;
+    $("#text-count").textContent = `${n} / ${TEXT_MAX}`;
+    $("#add-text").disabled = n >= TEXT_MAX;
+  }
+
+  function addTextRow(data = {}) {
+    if ($$("#text-rows .text-row").length >= TEXT_MAX) return null;
+    const position = TEXT_POSITIONS.includes(data.position) ? data.position : "bottom-center";
+    const font = TEXT_FONTS.some(([key]) => key === data.font) ? data.font : "naskh";
+    const color = /^#[0-9a-f]{6}$/i.test(data.color || "") ? data.color : "#ffe9c7";
+    const row = document.createElement("div");
+    row.className = "text-row";
+    row.innerHTML = `
+      <div class="text-row-main">
+        <input class="text-input" type="text" dir="auto" maxlength="120"
+          placeholder="اكتب نصًا هنا" aria-label="Text to draw" />
+        <button class="text-remove" type="button" title="Remove" aria-label="Remove text">×</button>
+      </div>
+      <div class="text-row-opts">
+        <label class="input"><span>Position</span>
+          <select class="text-pos">${TEXT_POSITIONS.map((p) => `<option value="${p}">${p}</option>`).join("")}</select>
+        </label>
+        <label class="input"><span>Font</span>
+          <select class="text-font">${TEXT_FONTS.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select>
+        </label>
+        <label class="input"><span>Color</span>
+          <input class="text-color" type="color" />
+        </label>
+      </div>`;
+    $(".text-input", row).value = data.text || "";
+    $(".text-pos", row).value = position;
+    $(".text-font", row).value = font;
+    $(".text-color", row).value = color;
+    $("#text-rows").appendChild(row);
+    updateTextCount();
+    return row;
+  }
+
+  function renderTextRows(items) {
+    $("#text-rows").replaceChildren();
+    for (const item of items || []) addTextRow(item);
+    updateTextCount();
+  }
+
+  function collectTexts() {
+    return $$("#text-rows .text-row")
+      .map((row) => ({
+        text: $(".text-input", row).value.trim(),
+        position: $(".text-pos", row).value,
+        font: $(".text-font", row).value,
+        color: $(".text-color", row).value,
+      }))
+      .filter((item) => item.text);
+  }
+
   // ---------------------------------------------------------------- actions
   async function generate() {
     const prompt = $("#prompt").value.trim();
@@ -520,6 +584,7 @@
       negative_prompt: $("#negative").value || state.config?.defaults?.negative || "",
       styles: [...state.styles].join(","),
       quality: state.quality,
+      texts: collectTexts(),
     };
     const button = $("#generate");
     button.disabled = true;
@@ -602,6 +667,7 @@
     for (const q of $$("#quality button")) q.classList.toggle("is-active", q.dataset.quality === quality);
     state.ratio = ratio;
     state.quality = quality;
+    renderTextRows(job.texts);
     updateSize();
     document.querySelector(".composer")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     $("#prompt").focus();
@@ -931,6 +997,14 @@
         updateSize();
       });
     }
+
+    $("#add-text").addEventListener("click", () => addTextRow()?.querySelector(".text-input")?.focus());
+    $("#text-rows").addEventListener("click", (event) => {
+      const remove = event.target.closest(".text-remove");
+      if (!remove) return;
+      remove.closest(".text-row").remove();
+      updateTextCount();
+    });
 
     $("#generate").addEventListener("click", generate);
     $("#cancel-btn").addEventListener("click", cancelActive);

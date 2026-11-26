@@ -83,6 +83,15 @@ async def auth_middleware(request: Request, call_next):  # type: ignore[no-untyp
     return await call_next(request)
 
 
+class TextItem(BaseModel):
+    """One caption block composited onto the finished image."""
+
+    text: str = Field(min_length=1)
+    position: str | None = "center"
+    color: str | None = None
+    font: str | None = "naskh"
+
+
 class GenerateRequest(BaseModel):
     prompt: str = Field(min_length=1)
     negative_prompt: str | None = None
@@ -93,6 +102,7 @@ class GenerateRequest(BaseModel):
     seed: int | None = None
     styles: str | None = None
     quality: str | None = None
+    texts: list[TextItem] | None = None
 
 
 @app.get("/api/health")
@@ -129,6 +139,7 @@ async def generate(body: GenerateRequest) -> dict[str, Any]:
             source="web",
             styles=body.styles or "",
             quality=body.quality or None,
+            texts=[t.model_dump() for t in body.texts] if body.texts else None,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc

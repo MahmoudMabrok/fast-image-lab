@@ -100,6 +100,10 @@ Queue a generation and optionally wait for it.
     "height":512,
     "steps":4,
     "cfg":1,
+    "texts":[
+      {"text":"صباح الخير","position":"bottom-center","font":"kufi","color":"#ffe9c7"},
+      {"text":"Fast Image Lab","position":"top-left","font":"sans"}
+    ],
     "wait_seconds":120
   }
 }}
@@ -113,7 +117,21 @@ Queue a generation and optionally wait for it.
 | `steps` | integer | 4 | 4–20; 4 is the model's native pace |
 | `cfg` | number | 1 | 1–10; above 1 costs a second text-encode pass |
 | `seed` | integer | random | Omit for a random seed |
+| `texts` | array | `[]` | 0–4 caption labels composited onto the PNG after decode; each `{text, position?, font?, color?}`. See below. |
 | `wait_seconds` | integer | 90 | 0–600; the call first holds until the engine has the job, then spends this budget waiting for completion |
+
+### In-image text (`texts`)
+
+The distilled model cannot draw glyphs — Arabic in the image comes out as noise. Put any wording that must appear in the picture in `texts` instead of the prompt: the gateway shapes it (RTL via `arabic-reshaper` + `python-bidi`) and draws it onto the decoded PNG with a bundled Arabic-capable font, so it is pixel-correct. Each label accepts:
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `text` | string | required | Up to 120 characters; any script |
+| `position` | string | `center` | `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right`, `center`. Labels sharing a position stack. |
+| `font` | string | `naskh` | `naskh` (classic), `kufi` (geometric), `sans` (plain; also covers Latin) |
+| `color` | string | auto | `#rrggbb`; omitted means the gateway picks a readable contrast color |
+
+The recipe is returned parsed as `structuredContent.texts` and persisted with the job; invalid captions fail the call with an error (they are rejected before a render is queued).
 
 The response always contains a text summary and `structuredContent`. The status is never `queued`: the call returns only once the engine has taken the job, so agents see `running` (with `progress`, `step`, `step_total`, `queue_position`, `eta_seconds`) or a terminal status. With `wait_seconds: 0` the id comes back as soon as the engine has the job.
 
@@ -130,6 +148,9 @@ The response always contains a text summary and `structuredContent`. The status 
     "height": 512,
     "seed": 123456789,
     "steps": 4,
+    "texts": [
+      {"text":"صباح الخير","position":"bottom-center","color":null,"font":"kufi"}
+    ],
     "expires_at": null,
     "expires_in": null,
     "image_url": null,
@@ -223,7 +244,7 @@ Tool failures are returned as successful JSON-RPC responses with `isError: true`
 ## Agent playbook
 
 1. Call `engine_info` once. On CPU, expect minutes per image.
-2. Call `generate_image` with `512×512`, `4` steps, `cfg` `1`, and a `wait_seconds` of 60–120.
+2. Call `generate_image` with `512×512`, `4` steps, `cfg` `1`, and a `wait_seconds` of 60–120. If any wording must appear **in** the image (especially Arabic), pass it as `texts` — putting it in the prompt will not render reliably.
 3. If the status is `running`, poll `get_generation` every 15–30 seconds; the summary carries live progress and an ETA. Do not start a second job unless you want to wait behind it — the engine is single-worker.
 4. On `succeeded`, write the base64 image to disk immediately. Mention the expiry to the user.
 5. Use the returned `seed` to reproduce or vary an image.

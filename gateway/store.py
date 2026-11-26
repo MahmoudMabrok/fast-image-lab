@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     prompt_id     TEXT,
     source        TEXT NOT NULL DEFAULT 'web',
     styles        TEXT NOT NULL DEFAULT '',
-    quality       TEXT
+    quality       TEXT,
+    texts         TEXT
 );
 CREATE INDEX IF NOT EXISTS jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS jobs_created ON jobs(created_at DESC);
@@ -75,6 +76,7 @@ class Store:
             for column, sql in (
                 ("styles", "ALTER TABLE jobs ADD COLUMN styles TEXT NOT NULL DEFAULT ''"),
                 ("quality", "ALTER TABLE jobs ADD COLUMN quality TEXT"),
+                ("texts", "ALTER TABLE jobs ADD COLUMN texts TEXT"),
             ):
                 if column not in have:
                     self._db.execute(sql)

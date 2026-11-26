@@ -153,6 +153,7 @@ def test_store_migrates_old_databases_adding_styles_and_quality(tmp_path):
     assert job is not None
     assert job["styles"] == ""
     assert job["quality"] is None
+    assert job["texts"] is None
     store.close()
 
     # Re-opening a migrated database is a no-op, and round-trips the new
@@ -161,4 +162,16 @@ def test_store_migrates_old_databases_adding_styles_and_quality(tmp_path):
     store.update("img_old", styles="cinematic,photo", quality="detail")
     job = store.get("img_old")
     assert (job["styles"], job["quality"]) == ("cinematic,photo", "detail")
+    store.close()
+
+
+def test_texts_roundtrip(tmp_path):
+    """The caption recipe persists as JSON and comes back verbatim."""
+    store = Store(tmp_path / "jobs.sqlite3")
+    job = make_job("img_cap")
+    job["texts"] = '[{"text":"قطة","position":"center","color":null,"font":"naskh"}]'
+    store.create(job)
+    got = store.get("img_cap")
+    assert got is not None
+    assert got["texts"] == job["texts"]
     store.close()

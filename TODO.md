@@ -6,6 +6,40 @@ from (Bonsai's 1-bit Q1_0 file is unloadable — no Q1_0 dequantizer exists in
 any current toolchain — so the CPU build uses its 2-bit Q2_K GGUF), exposed
 via a named cloudflared tunnel. Images are ephemeral (five hours).
 
+## In progress
+
+### 2026-11-26 — Commit, push and deploy the Arabic text feature
+
+- [x] Working tree contains only intended changes; no secrets or scratch files (16 modified + 6 new files; `.secrets/` ignored and untracked)
+- [x] `make test` green on the exact tree being committed (60 passed)
+- [ ] Feature changes committed with a descriptive message
+- [ ] Commit pushed to the configured remote
+- [ ] `make deploy MACHINE=bonsai` succeeds; public `/api/health` reports ready
+- [ ] Live keyed generation with Arabic `texts` succeeds and rendered glyphs verified
+- [ ] `TODO.md` checklist closed out under `## Completed` with the date
+
+## Completed
+
+### Done 2026-11-26 — Arabic / in-image text support (post-render caption overlay)
+
+The model cannot draw Arabic glyphs (4B distilled DiT + Q2_K quant; weak in-image
+text even in English). Fix: the gateway composites the requested text onto the
+PNG after ComfyUI decodes it (Pillow + reshaper/bidi), so script rendering is
+reliable for Arabic and any other language.
+
+- [x] requirements/pyproject — add pillow, arabic-reshaper, python-bidi; install in local venv
+- [x] Validate shaping pipeline — arabic-reshaper + python-bidi + bundled Noto Naskh Arabic font render "صباح الخير من الصحراء" correctly (visual check passed); font vendored in `gateway/fonts/` (the VM has zero system fonts)
+- [x] `gateway/fonts/` — vendor 3 OFL families: Noto Naskh Arabic (default), Noto Kufi Arabic, Noto Sans (Latin + Arabic). Nastaliq dropped: it needs libraqm GSUB shaping, unavailable on host and VM; the other 3 render directly via presentation forms (visual strip verified distinct)
+- [x] `gateway/images/text.py` — draw a LIST of up to 4 texts onto the PNG (RTL/Arabic shaping, wrap, 7 positions, per-item font from the 3, per-item color, auto-size, contrast outline); `validate_texts`/`dumps`/`loads` for API + persistence
+- [x] `gateway/store.py` — `texts` column (JSON) + idempotent migration (legacy DB roundtrip test passes)
+- [x] `gateway/engine.py` — `submit()` takes `texts`; `_run_job()` applies overlays before saving (bytes stat after overlay); invalid captions fail at submit; `public_job` exposes parsed `texts`
+- [x] `gateway/main.py` — `/api/generate` accepts `texts: [{text, position, color, font}]`; job responses carry them; bad captions → 422
+- [x] `gateway/mcp_http.py` — `generate_image` schema + handler pass `texts`; MCP summary exposes parsed `texts`
+- [x] `web/` — "Text in image" field set (addable rows: text + position + color + font, up to 4) wired into generate + restoreRecipe; RTL inputs; note that the lab draws the text, not the model (JS syntax checked; served-page assertions pass)
+- [x] Tests: overlay draw/multi-text/multi-font/RTL/wrap/validation, font fallback, store roundtrip, API + MCP texts pass-through — `make test` green (60 passed)
+- [x] Docs: README (feature + model-limitation note, curl example, map, 60 tests), docs/MCP.md (texts schema + in-image text subsection, summary example, playbook)
+- [x] Deploy to `bonsai` (`make deploy MACHINE=bonsai`, fonts + deps present on VM); live-verified: 3-label Naskh/Kufi/Sans job `img_cKUEARPWeDTP` succeeded and the fetched PNG shows correct RTL glyphs; MCP `tools/list` schema + `tools/call` pass-through and the served UI were checked over `fast-image-lab.mo3ta.top` with the key. Caught and fixed a color round-trip bug during live verification (`dumps` tuple → `loads` hex re-validation), retested 60/60 and redeployed.
+
 ## Completed
 
 ### 2026-11-26 — named tunnel fixed; quick tunnel removed

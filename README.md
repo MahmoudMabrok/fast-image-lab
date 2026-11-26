@@ -27,6 +27,7 @@ Every generated PNG is deleted **five hours after it is ready**. That is the poi
 ## What you get
 
 - **A proper studio UI** — prompt composer, style presets, aspect ratios, quality tiers, live progress over SSE, download (or opt-in auto-download, remembered per browser), cancel, delete-now, and a recent strip with countdowns.
+- **Reliable text in images** — up to four captions (Arabic, English, any script), each with its own position, font (Naskh / Kufi / Sans), and color. The gateway draws them after the model finishes, so letters are always correct.
 - **MCP for agents** — `generate_image`, `get_generation`, `cancel_generation`, `engine_info`. Images come back inline as base64 and are also served over HTTP. Agents only see the jobs they start (no listing endpoint).
 - **Self-destructing images** — the reaper runs every two seconds and removes files whose TTL expired. Metadata is kept for a day so the UI can show what happened.
 - **A CPU-native quantized model** — the transformer is a 2-bit Q2_K GGUF (~1.7 GB) of the distilled FLUX.2-Klein-4B build (the same weights Bonsai Image 4B quantizes to 1 bit), the whole reason this build fits on a 16 GB kube-labs disk. No LoRA: the step/guidance distillation is baked into the weights.
@@ -44,6 +45,20 @@ Bonsai Image 4B is distillation of FLUX.2-Klein-4B. The distillation makes three
   decode, save.
 
 On CPU the transformer is `flux-2-klein-4b-Q2_K.gguf` (2-bit Q2_K GGUF, ~1.7 GB) — the same distilled FLUX.2-Klein-4B build Bonsai Image 4B is quantized from, loaded by molbal's `UnetLoaderGGUF` (149 tensors, identical layout, arch detected by tensor names). Bonsai's own 1-bit (Q1_0) file cannot be dequantized by any current toolchain — ggml, the `gguf` package, and molbal all lack a Q1_0 decoder (verified: the file's 80 Q1_0 tensors raise `NotImplementedError`) — so the 2-bit quant of the same weights is the smallest loadable form. If arch detection ever rejects the GGUF on this host, the sanctioned fallback is the plain `UNETLoader` with the 7.75 GB fp16 transformer (flip `ANOTHERLAB_UNET_LOADER` / `ANOTHERLAB_UNET` and restart; `remote_models_fallback.sh` fetches the fp16 file).
+
+### Text in images (Arabic and other scripts)
+
+A 4B distilled DiT cannot reliably draw glyphs — in-image English is fragile and Arabic comes out as noise. Asking for wording in the prompt does not fix that; the Qwen3 text encoder understands Arabic but the model cannot render it. So any word that **must** appear in the picture is drawn by the gateway onto the decoded PNG (Pillow + `arabic-reshaper` + `python-bidi`), never left to the model:
+
+- Add up to **4 labels** in the composer's **Text in image** section, or pass `texts` to `/api/generate` / MCP `generate_image`.
+- Each label has its own `text`, `position` (`top-left` … `bottom-right`, `center`), `font` (`naskh` default, `kufi`, `sans`) and `color` (`#rrggbb`; omit for an auto-picked contrast color). Labels sharing a position stack automatically.
+- The three bundled OFL fonts live in `gateway/fonts/` — the VM has no system fonts, so nothing is resolved from the host. Each has full Arabic presentation forms, so RTL shaping needs no system `libraqm`. `sans` also covers Latin.
+- The caption recipe is stored with the job (JSON) and restored by **re-run**, but never added to the prompt.
+
+```bash
+curl "$BASE/api/generate" -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"prompt":"a desert at dawn","texts":[{"text":"صباح الخير","position":"bottom-center","font":"kufi","color":"#ffe9c7"}]}'
+```
 
 ## Quick start on kube-labs
 
@@ -178,7 +193,7 @@ Add `--key <API_KEY>` when the server has `ANOTHERLAB_API_KEY` set.
 
 | Tool | Arguments | Returns |
 |---|---|---|
-| `generate_image` | `prompt`, `width`, `height`, `steps`, `cfg`, `seed`, `negative_prompt`, `wait_seconds` | Job summary + PNG inline when ready |
+| `generate_image` | `prompt`, `width`, `height`, `steps`, `cfg`, `seed`, `negative_prompt`, `texts`, `wait_seconds` | Job summary (incl. parsed `texts`) + PNG inline when ready |
 | `get_generation` | `id` | Your job by id, with live progress while running + PNG inline while alive |
 | `cancel_generation` | `id` | Updated status |
 | `engine_info` | — | Device, queue, defaults, limits, TTL |
@@ -194,7 +209,7 @@ See [docs/MCP.md](docs/MCP.md) for raw JSON-RPC examples and the exact response 
 ```bash
 curl -s http://127.0.0.1:8080/api/generate \
   -H 'Content-Type: application/json' \
-  -d '{"prompt":"a bonsai tree in a black ceramic pot, soft light","width":512,"height":512,"steps":4}'
+  -d '{"prompt":"a bonsai tree in a black ceramic pot, soft light","width":512,"height":512,"steps":4,"texts":[{"text":"صباح الخير","font":"naskh"}]}'
 ```
 
 | Method | Path | Purpose |
@@ -267,11 +282,11 @@ The ETA in the UI is a calibrated guess until real jobs complete; after that it 
 
 ```bash
 make install     # venv + dev dependencies
-make test        # 30 tests: graph, store, MCP, engine e2e, API e2e
+make test        # 60 tests: graph, store, overlay, MCP, engine e2e, API e2e
 make run         # gateway on :8080 (expects ComfyUI at :8188)
 ```
 
-The gateway is deliberately dependency-light: FastAPI, httpx, websockets, SQLite. MCP is implemented directly in `gateway/mcp_http.py` rather than through an SDK, so protocol upgrades cannot break the server.
+The gateway is deliberately dependency-light: FastAPI, httpx, websockets, SQLite, plus Pillow / arabic-reshaper / python-bidi for the post-render text overlay. MCP is implemented directly in `gateway/mcp_http.py` rather than through an SDK, so protocol upgrades cannot break the server.
 
 ```
 gateway/
@@ -283,6 +298,8 @@ gateway/
   main.py       FastAPI app, REST, SSE, static UI
   mcp_http.py   MCP JSON-RPC over Streamable HTTP
   mcp_stdio.py  stdio bridge for local agents
+  images/text.py  post-render caption overlay (RTL shaping, fonts, wrap)
+  fonts/        three bundled OFL Arabic-capable fonts
 web/            the UI (no build step)
 scripts/        provisioning, deploy, tunnel, trial
 profiles/       CPU environment profile
@@ -324,5 +341,5 @@ Bonsai Image 4B is a quantization-aware-training (QAT) distillation of [FLUX.2-K
 ## Status
 
 - Gateway, UI, MCP server, tests, and deployment scripts are complete.
-- `make test` is green locally (30 tests).
+- `make test` is green locally (60 tests).
 - Deployment and the public Cloudflare URL are recorded once the tunnel is up.

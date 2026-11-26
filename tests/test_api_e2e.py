@@ -87,6 +87,10 @@ def test_ui_and_config_are_served(stack):
     # (opt-in by default; the choice persists in the browser).
     assert 'id="auto-download"' in ui.text
     assert "Auto-download finished images" in ui.text
+    # The in-image text composer ships in the no-build UI.
+    assert 'id="text-rows"' in ui.text
+    assert 'id="add-text"' in ui.text
+    assert "Text in image" in ui.text
     config = httpx.get(base + "/api/config").json()
     assert config["ttl_seconds"] == 3
     assert config["mcp"]["http"].endswith("/mcp")
@@ -289,3 +293,39 @@ def test_generate_persists_style_look_and_quality_tier(stack):
     listed = httpx.get(base + "/api/generations?limit=24", timeout=10).json()
     assert listed["generations"][0]["styles"] == "cinematic,photo"
     assert listed["generations"][0]["quality"] == "detail"
+
+
+def test_generate_persists_caption_texts(stack):
+    """Arabic captions are passed as structured `texts`, not baked into the
+    prompt, and come back parsed on every read surface."""
+    base, _ = stack
+    caption = [{"text": "صباح الخير", "position": "bottom-center", "font": "kufi"}]
+    job = httpx.post(
+        base + "/api/generate",
+        json={"prompt": "a desert", "width": 512, "height": 512, "steps": 4, "texts": caption},
+        timeout=10,
+    ).json()
+    expected = [{
+        "text": "صباح الخير", "position": "bottom-center", "color": None, "font": "kufi"
+    }]
+    assert job["texts"] == expected
+    current = httpx.get(base + f"/api/generations/{job['id']}", timeout=10).json()
+    assert current["texts"] == expected
+    listed = httpx.get(base + "/api/generations?limit=24", timeout=10).json()
+    assert listed["generations"][0]["texts"] == expected
+    # The caption is not smuggled into the prompt (the model cannot draw it).
+    assert "صباح الخير" not in current["prompt"]
+
+
+def test_generate_rejects_bad_caption(stack):
+    base, _ = stack
+    resp = httpx.post(
+        base + "/api/generate",
+        json={
+            "prompt": "a cat", "width": 512, "height": 512, "steps": 4,
+            "texts": [{"text": "x", "position": "nowhere"}],
+        },
+        timeout=10,
+    )
+    assert resp.status_code == 422
+    assert "position" in resp.json()["detail"]

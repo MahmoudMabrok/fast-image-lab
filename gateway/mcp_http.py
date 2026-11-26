@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse, Response
 
 from .config import Settings
 from .engine import Engine
+from .images.text import loads
 from .store import ACTIVE
 
 PROTOCOL_VERSIONS = ("2024-11-05", "2025-03-26", "2025-06-18")
@@ -102,6 +103,53 @@ def build_tools(settings: Settings) -> list[dict[str, Any]]:
                     },
                     "cfg": {"type": "number", "minimum": 1, "maximum": 10, "default": 1},
                     "seed": {"type": "integer", "description": "Omit for a random seed."},
+                    "texts": {
+                        "type": "array",
+                        "maxItems": 4,
+                        "description": (
+                            "Caption text composited onto the finished image, "
+                            "one per entry (up to 4). The model itself cannot "
+                            "draw script glyphs, so use this — not the prompt — "
+                            "for any wording that must appear in the image; it "
+                            "renders reliably in Arabic (RTL) and other scripts. "
+                            "Omit for no text."
+                        ),
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "text": {
+                                    "type": "string",
+                                    "description": "The wording to draw, up to 120 characters.",
+                                },
+                                "position": {
+                                    "type": "string",
+                                    "enum": [
+                                        "top-left",
+                                        "top-center",
+                                        "top-right",
+                                        "bottom-left",
+                                        "bottom-center",
+                                        "bottom-right",
+                                        "center",
+                                    ],
+                                    "description": "Where to anchor the text. Default: center.",
+                                },
+                                "color": {
+                                    "type": "string",
+                                    "description": "Text color as #rrggbb; omit to auto-pick a readable contrast color.",
+                                },
+                                "font": {
+                                    "type": "string",
+                                    "enum": ["naskh", "kufi", "sans"],
+                                    "description": (
+                                        "Typeface: naskh (default, classic), kufi (geometric), "
+                                        "sans (plain; the only face that also covers Latin)."
+                                    ),
+                                },
+                            },
+                            "required": ["text"],
+                        },
+                    },
                     "wait_seconds": {
                         "type": "integer",
                         "minimum": 0,
@@ -174,6 +222,7 @@ class McpServer:
             "height": job["height"],
             "seed": job["seed"],
             "steps": job["steps"],
+            "texts": loads(job.get("texts")),
             "expires_at": job.get("expires_at"),
             "expires_in": job.get("expires_in"),
             "image_url": f"/api/images/{job['id']}" if job.get("filename") else None,
@@ -208,6 +257,7 @@ class McpServer:
                 cfg=float(args.get("cfg") or self.settings.default_cfg),
                 seed=args.get("seed"),
                 source="mcp",
+                texts=args.get("texts"),
             )
             wait = max(
                 0, min(self.settings.mcp_wait_max, int(args.get("wait_seconds", self.settings.mcp_wait_default)))

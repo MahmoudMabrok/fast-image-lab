@@ -31,8 +31,9 @@ def free_port() -> int:
 
 
 class FakeComfy:
-    def __init__(self, output_dir: Path, *, duration: float = 1.2, steps: int = 4):
+    def __init__(self, output_dir: Path, *, duration: float = 1.2, steps: int = 4, image: bytes | None = None):
         self.drop_next = 0
+        self.image = image if image is not None else PNG_1X1
         self.output_dir = output_dir
         self.duration = duration
         self.steps = steps
@@ -140,7 +141,7 @@ class FakeComfy:
             )
         filename = f"anotherlab_{prompt_id[:8]}_.png"
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        (self.output_dir / filename).write_bytes(PNG_1X1)
+        (self.output_dir / filename).write_bytes(self.image)
         self.history[prompt_id] = {
             "prompt": [0, prompt_id, {}, {}, []],
             "outputs": {"10": {"images": [{"filename": filename, "subfolder": "", "type": "output"}]}},
