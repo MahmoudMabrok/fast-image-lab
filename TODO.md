@@ -6,19 +6,17 @@ from (Bonsai's 1-bit Q1_0 file is unloadable — no Q1_0 dequantizer exists in
 any current toolchain — so the CPU build uses its 2-bit Q2_K GGUF), exposed
 via a named cloudflared tunnel. Images are ephemeral (five hours).
 
-## In progress
+## Completed
 
-### 2026-11-26 — Commit, push and deploy the Arabic text feature
+### Done 2026-11-26 — Commit, push and deploy the Arabic text feature
 
 - [x] Working tree contains only intended changes; no secrets or scratch files (16 modified + 6 new files; `.secrets/` ignored and untracked)
 - [x] `make test` green on the exact tree being committed (60 passed)
-- [ ] Feature changes committed with a descriptive message
-- [ ] Commit pushed to the configured remote
-- [ ] `make deploy MACHINE=bonsai` succeeds; public `/api/health` reports ready
-- [ ] Live keyed generation with Arabic `texts` succeeds and rendered glyphs verified
-- [ ] `TODO.md` checklist closed out under `## Completed` with the date
-
-## Completed
+- [x] Feature changes committed as `f146e2a` (Add reliable in-image text (Arabic) overlays)
+- [x] Commit pushed to `origin/wip/imagelab-backport` (`2d5893a..f146e2a`; local and remote HEAD match)
+- [x] `make deploy MACHINE=bonsai` succeeded; public `/api/health` reports `ready: true` (cpu, 18000s TTL), deployed source contains the color-roundtrip fix and all 3 fonts are present
+- [x] Live keyed generation `img_FyhTRV0tAG2Z` succeeded with Naskh + Kufi Arabic labels; fetched PNG visually verified (connected RTL glyphs, both positions)
+- [x] `TODO.md` checklist closed out under `## Completed` with the date
 
 ### Done 2026-11-26 — Arabic / in-image text support (post-render caption overlay)
 
